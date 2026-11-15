@@ -170,6 +170,8 @@
       <button class="gold" id="btnMall">代金券商城（<span id="vCount">0</span>券）</button>
       <button id="btnRename" class="hidden" onclick="useRename()">使用改名符（<span id="rnCnt">0</span>张）</button>
       <button id="btnSave">保存存档</button>
+      <button onclick="exportSave()">导出存档</button>
+      <button onclick="importSave()">导入存档</button>
       <button id="btnWipe">删档重来</button>
     </div>
   </div>
@@ -1203,6 +1205,34 @@ function buyVoucherPack(){
   S.gold-=50000;S.vouchers=(S.vouchers||0)+10;
   blog("【商城】金币兑换代金券×10","sys");toast("代金券+10");
   showMall();renderAll();autosave();
+}
+function exportSave(){
+  autosave();
+  const d=localStorage.getItem("bzyz_v2_save")||"";
+  openModal(`<h2>导出存档</h2>
+    <div class="cmp">复制下面全部文本保存到备忘录——在目标设备的"导入存档"里粘贴即可迁移进度。</div>
+    <textarea style="width:100%;height:180px;margin-top:6px;font-size:11px;" readonly onclick="this.select()">${d}</textarea>
+    <button onclick="closeModal()">关闭</button>`);
+  $("modal").classList.remove("hidden");
+}
+function importSave(){
+  openModal(`<h2>导入存档</h2>
+    <div class="cmp">粘贴存档文本（来自源设备的"导出存档"），将覆盖当前进度。</div>
+    <textarea id="impTxt" style="width:100%;height:180px;margin-top:6px;font-size:11px;" placeholder="在此粘贴存档文本……"></textarea>
+    <div style="margin-top:6px;">
+      <button class="primary" onclick="doImport()">确认导入</button>
+      <button onclick="closeModal()">取消</button></div>`);
+  $("modal").classList.remove("hidden");
+}
+function doImport(){
+  const t=$("impTxt").value.trim();
+  if(!t){toast("没有内容");return;}
+  try{
+    const obj=JSON.parse(t);
+    if(obj.lv===undefined&&obj.bag===undefined){toast("文本不是有效存档");return;}
+    localStorage.setItem("bzyz_v2_save",t);
+    closeModal();location.reload();
+  }catch(e){toast("导入失败：文本格式不对");}
 }
 /* ================= 存档 ================= */
 function autosave(){try{localStorage.setItem("bzyz_v2_save",JSON.stringify(S));}catch(e){}}
