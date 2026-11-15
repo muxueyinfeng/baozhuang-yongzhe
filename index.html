@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>爆装勇者 v2.0 · 重铸根基</title>
+<style>
+  :root{
+    --bg:#F5F5F0; --ink:#2C2C2C; --accent:#8B4513; --blue:#4682B4;
+    --q0:#808080; --q1:#228B22; --q2:#4169E1; --q3:#9932CC; --q4:#FF8C00; --q5:#DC143C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg); color:var(--ink); font-family:"KaiTi","STKaiti","Songti SC",serif;
+    max-width:760px; margin:0 auto; padding:10px; font-size:16px; line-height:1.6;
+    background-image:radial-gradient(circle at 15% 20%, rgba(0,0,0,.03), transparent 40%),
+                     radial-gradient(circle at 85% 80%, rgba(0,0,0,.04), transparent 40%);}
+  h1{font-size:22px; text-align:center; color:var(--accent); letter-spacing:4px; margin:6px 0 2px;}
+  .sub{text-align:center; color:#777; font-size:12px; margin-bottom:8px;}
+  .panel{border:1px solid #c9c4b8; border-radius:8px; background:rgba(255,255,255,.55);
+    padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .panel h2{font-size:16px; color:var(--accent); border-bottom:1px solid #ddd6c8; padding-bottom:4px; margin-bottom:6px;}
+  .row{display:flex; flex-wrap:wrap; gap:3px 14px;}
+  .stat{white-space:nowrap;}
+  .bar{height:8px; background:#e3ded2; border-radius:4px; overflow:hidden; margin:2px 0 6px;}
+  .bar>i{display:block; height:100%; transition:width .3s;}
+  .bar.hp>i{background:#b03a2e;} .bar.xp>i{background:#6c8f5a;}
+  button{font-family:inherit; font-size:15px; border:1px solid #b8b2a2; background:#efece2; color:var(--ink);
+    border-radius:6px; padding:8px 12px; margin:3px 4px 3px 0; cursor:pointer;}
+  button:active{background:#e0dbcc;}
+  button.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  button.danger{background:#8c2f24; color:#fff; border-color:#8c2f24;}
+  button:disabled{opacity:.4;}
+  .tabs{display:flex; gap:6px; margin-bottom:10px; position:sticky; top:0; background:var(--bg); padding:4px 0; z-index:5;}
+  .tabs button{flex:1;}
+  .tabs button.on{background:var(--accent); color:#fff;}
+  .log{height:200px; overflow-y:auto; font-size:13.5px; background:rgba(255,255,255,.4);
+    border:1px dashed #c9c4b8; border-radius:6px; padding:6px 8px;}
+  .log p{margin:1px 0;}
+  .q0{color:var(--q0);} .q1{color:var(--q1);} .q2{color:var(--q2);}
+  .q3{color:var(--q3);} .q4{color:var(--q4);}
+    .q5{color:var(--q5); font-weight:bold; text-shadow:0 0 6px rgba(220,20,60,.4);}
+  /* v2.1 十档新增：神/圣/混沌/创世 */
+  .q6{background:linear-gradient(100deg,#8a5a00,#ffd24a 30%,#b8860b 55%,#ffe9a0 80%,#8a5a00);
+    background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:goldFlow 3.5s linear infinite;filter:drop-shadow(0 0 6px rgba(212,175,55,.5));}
+  @keyframes goldFlow{to{background-position:250% 0;}}
+  .q7{background:linear-gradient(90deg,#ff3b30,#ff9500,#ffd60a,#34c759,#32ade6,#af52de,#ff3b30);
+    background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:rainbow 5s linear infinite;filter:drop-shadow(0 0 5px rgba(175,82,222,.4));}
+  @keyframes rainbow{to{background-position:300% 0;}}
+  .q8{background:linear-gradient(100deg,#1a1a2e,#3a3a5e 45%,#1a1a2e);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:star 1.8s ease-in-out infinite;
+    filter:drop-shadow(0 0 6px rgba(255,215,0,.55));}
+  @keyframes star{0%,100%{filter:drop-shadow(0 0 4px rgba(255,215,0,.4));}
+    50%{filter:drop-shadow(0 0 12px rgba(255,215,0,.9));}}
+  .q9{background:linear-gradient(90deg,#fff,#ffe9a0,#ffd0e0,#d0e8ff,#e0ffd8,#fff);
+    background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:rainbow 4s linear infinite;
+    filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px rgba(255,255,255,.9));}
+  /* 混沌/创世装备详情弹窗：深空底 */
+  .modal .box.deepSpace{background:linear-gradient(170deg,#101018,#1a1a2e);color:#cfcfe0;}
+  .modal .box.deepSpace h2,.modal .box.deepSpace .cmp,.modal .box.deepSpace .affix{color:#bbb;}
+  .modal .box.deepSpace button{background:#2a2a40;color:#ffd24a;border-color:#3a3a5e;}
+  .modal .box.deepSpace button.primary{background:#b8860b;color:#fff;}
+  .item{border:1px solid #ddd6c8; border-radius:6px; padding:6px 8px; margin-bottom:6px; font-size:14px; background:rgba(255,255,255,.45); cursor:pointer;}
+  .item:active{background:#eee9db;}
+  .item .nm{font-size:15px;}
+  .affix{color:#666; font-size:13px;}
+  .dmg{color:#b03a2e;} .heal{color:#228B22;} .crit{color:#DC143C; font-weight:bold;}
+  .sys{color:#8B4513;} .enemy{color:#5a4a8a;}
+  .pet{color:#c25a10;font-weight:bold;}
+
+  .up{color:#228B22;} .down{color:#b03a2e;}
+  ::selection{background:#8B4513;color:#fff;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#c9bfa8;border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  button:focus-visible{outline:2px solid #8B4513;outline-offset:2px;}
+  body{font-variant-numeric:tabular-nums;}
+  .cmp{font-size:12px;color:#6d6455;}
+  @media (hover:hover){
+    .item:hover,.dg:hover{transform:translateY(-2px);box-shadow:0 3px 8px rgba(0,0,0,.1);border-color:#8B4513;}
+    .item,.dg{transition:transform .18s ease-out,box-shadow .18s ease-out,border-color .18s ease-out;}
+  }
+  .panel h2{margin-top:3px;}
+  .sub{color:#6d6455;}
+  body[data-theme="night"]{
+    --bg:#12121c; --ink:#d8d4c8; --accent:#b8860b; --blue:#6c8fbb;
+    background-image:radial-gradient(circle at 15% 20%,rgba(255,215,0,.04),transparent 40%),
+                     radial-gradient(circle at 85% 80%,rgba(184,134,11,.05),transparent 40%);}
+  body[data-theme="night"] .panel{background:rgba(30,30,48,.75);border-color:#3a3a5e;}
+  body[data-theme="night"] button{background:#1e1e30;color:#d8d4c8;border-color:#3a3a5e;}
+  body[data-theme="night"] button.primary{background:#b8860b;color:#fff;}
+  body[data-theme="night"] button.gold{background:linear-gradient(135deg,#8a5a00,#c99a2e);color:#fff;border-color:#8a5a00;}
+  body[data-theme="night"] .item,body[data-theme="night"] .dg{background:rgba(30,30,48,.6);}
+  body[data-theme="night"] .bar{background:#2a2a3e;}
+  body[data-theme="night"] .navbar{background:#1a1a2e;border-top-color:#b8860b;}
+  body[data-theme="night"] .tabs{background:#12121c;}
+  body[data-theme="night"] .tabs button{background:#1e1e30;color:#d8d4c8;border-color:#3a3a5e;}
+  body[data-theme="night"] .tabs button.on{background:#b8860b;color:#fff;}
+  body[data-theme="night"] .log{background:rgba(20,20,34,.6);border-color:#3a3a5e;}
+  body[data-theme="night"] .modal .box{background:#12121c;color:#d8d4c8;}
+  body[data-theme="night"] .headSeal{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.15),rgba(255,255,255,.03));}
+  .hidden{display:none!important;}
+  .dg{border:1px solid #c9c4b8; border-radius:8px; padding:8px 10px; margin-bottom:8px; background:rgba(255,255,255,.5);}
+  .dg.lock{opacity:.5;}
+  .dg .head{display:flex; justify-content:space-between; align-items:center;}
+  .dg .pity{font-size:12px; color:var(--blue);}
+  .dg.current{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
+  .slots{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+  .slot{border:1px solid #c9c4b8; border-radius:6px; padding:6px; font-size:13px; min-height:58px; background:rgba(255,255,255,.4); cursor:pointer;}
+  .slot b{display:block; color:#888; font-weight:normal; font-size:12px;}
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:50; display:flex; align-items:flex-end; justify-content:center;}
+  .modal .box{background:var(--bg); width:100%; max-width:760px; border-radius:12px 12px 0 0; padding:14px; max-height:75vh; overflow-y:auto;}
+  .toast{position:fixed; left:50%; top:14px; transform:translateX(-50%); background:rgba(44,44,44,.9);
+    color:#fff; padding:8px 16px; border-radius:20px; font-size:14px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none;}
+  .powerTag{font-size:13px; color:var(--accent);}
+  .badge{display:inline-block; font-size:11px; border:1px solid var(--blue); color:var(--blue); border-radius:10px; padding:0 6px; margin-left:6px;}
+</style>
+</head>
+<body>
+<h1>爆装勇者</h1>
+<div class="sub">v2.0.1 · 自动刷本 · 双轨保底 · 品质封顶随副本 · 首杀金币大奖 · 十二副本</div>
+
+<div class="tabs">
+  <button data-tab="dungeon" class="on">副本</button>
+  <button data-tab="hero">角色</button>
+  <button data-tab="bag">装备背包</button>
+</div>
+
+<!-- ===== 副本页 ===== -->
+<div id="tab-dungeon">
+  <div class="panel">
+    <h2>副本列表</h2>
+    <div id="dgList"></div>
+  </div>
+  <div class="panel">
+    <h2 id="farmTitle">战斗日志</h2>
+    <div class="row" style="justify-content:space-between; margin-bottom:4px;">
+      <span class="stat" id="farmStat">未在刷本</span>
+      <span>
+        <button class="danger hidden" id="btnStop">停止刷本</button>
+        <button class="primary" id="btnBoss">挑战 BOSS</button>
+      </span>
+    </div>
+    <div class="bar hp" id="hpWrap" style="display:none;"><i id="hpBar"></i></div>
+    <div class="log" id="battleLog"></div>
+  </div>
+</div>
+
+<!-- ===== 角色页 ===== -->
+<div id="tab-hero" class="hidden">
+  <div class="panel">
+    <h2>人物属性</h2>
+    <div class="row" style="justify-content:space-between;">
+      <b id="pLevel">Lv.1 勇者</b>
+      <span id="titleTag"></span>
+      <span class="stat">经验 <span id="pXp">0/100</span></span>
+    </div>
+    <div class="bar xp"><i id="pXpBar" style="width:0%"></i></div>
+    <div class="row" id="pStats"></div>
+    <div style="margin-top:6px;" class="row">
+      <span class="stat powerTag">综合战力：<b id="pPower">0</b></span>
+      <span class="stat cmp">击杀数 <span id="pKills">0</span></span>
+    </div>
+    <div style="margin-top:8px;">
+      <button id="btnPotion">喝治疗药水(<span id="pPot">5</span>) 回复50%</button>
+      <button id="btnBuyPot">买药水（100金/瓶）</button>
+      <button class="gold" id="btnMall">代金券商城（<span id="vCount">0</span>券）</button>
+      <button id="btnRename" class="hidden" onclick="useRename()">使用改名符（<span id="rnCnt">0</span>张）</button>
+      <button id="btnSave">保存存档</button>
+      <button id="btnWipe">删档重来</button>
+    </div>
+  </div>
+  <div class="panel" id="petPanel">
+    <h2>灵宠 · 双人作战</h2>
+    <div id="petBody"></div>
+  </div>
+  <div class="panel">
+    <h2>已穿戴（9部位）· 点击查看</h2>
+    <div class="slots" id="slots"></div>
+  </div>
+</div>
+
+<!-- ===== 背包页 ===== -->
+<div id="tab-bag" class="hidden">
+  <div class="panel">
+    <h2>背包 <span class="cmp" id="bagCount"></span></h2>
+    <div class="row" style="margin-bottom:4px;">
+      <button onclick="sellJunk()">一键出售 灰/绿</button>
+      <button onclick="sellJunk(2)">一键出售 灰/绿/蓝</button>
+      <span class="stat" style="margin-left:auto;">金币 <b id="pGold">0</b></span>
+      <span class="stat">重铸石 <b id="pStones">0</b></span>
+    </div>
+    <div class="row" style="margin-bottom:6px;">
+      <button onclick="buyStam()">买体力+30（<span id="stamPrice">500</span>金）</button>
+      <button class="primary" onclick="buyBuff('drop')">掉率符+20%（2000金·30分）</button>
+      <button onclick="buyBuff('xp')">经验符+50%（1500金·30分）</button>
+      <span class="stat cmp" id="buffState"></span>
+    </div>
+    <div id="bagList"></div>
+  </div>
+</div>
+
+<!-- ===== 装备详情弹窗 ===== -->
+<div class="modal hidden" id="modal">
+  <div class="box" id="modalBox"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= v2.0 数值总纲 =================
+   1. 经验 35*l^1.45，怪经验随副本线性递增 → 升级减速
+   2. 怪物锚定同级玩家裸装基础(比例×难度k)，随副本12级阶梯爬升
+   3. 伤害：减伤改百分比制(封顶75%)，攻方保底15% → 防御永不碾压归零
+   4. 词条%加总后单次乘(封顶150%)，数值随等级小幅成长
+   5. 掉率35%，双轨保底(25杀必紫 / 90杀必橙)，BOSS首杀必橙
+================================================= */
+const QNAMES=["凡品","灵品","玄品","地品","天品","仙品","神品","圣品","混沌","创世"];
+const QCOLOR=["q0","q1","q2","q3","q4","q5","q6","q7","q8","q9"];
+const QPROB=[.35,.28,.17,.10,.048,.028,.014,.006,.0018,.0002];
+const QAFFIX=[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[5,6],[6,6],[6,7],[7,7]];
+const QRANGE=[[.10,.30],[.30,.50],[.50,.80],[.80,1.20],[1.20,1.80],[1.80,2.50],[2.0,2.7],[2.2,3.0],[2.4,3.3],[2.6,3.6]];
+const QATK=[[12,28],[32,72],[75,155],[160,320],[330,620],[680,1220],[1300,2000],[1900,2900],[2700,4100],[3800,5600]];
+const QPOW=[1,2,4,8,16,32,48,64,80,100];
+const SLOTS=["主手武器","副手武器","头盔","上衣","手套","腰带","裤子","鞋子","饰品"];
+const WNAMES=["长剑","战刀","长枪","法杖","折扇"];
+const ONAMES=["短剑","圆盾","符咒","战旗"];
+const AFFIX_POOLS=[
+  ["攻击力 +{v}%","防御力 +{v}%","生命值 +{v}%","速度 +{v}","暴击率 +{v}%","暴击伤害 +{v}%","命中率 +{v}%","闪避率 +{v}%"],
+  ["伤害加深 +{v}%","伤害减免 +{v}%","生命回复 +{v}/回合","吸血 +{v}%","反伤 +{v}%","金币获取 +{v}%"],
+  ["破甲：无视目标 {v}% 防御","坚韧：受到暴击伤害降低 {v}%","狂暴：生命低于30%时攻击+50%","贪婪：击杀后3回合伤害+25%","护体：致命伤害保留1点生命(每场1次)"],
+  ["斩王：对BOSS伤害+{v}%","不灭：每回合{v}%概率免疫死亡","吞噬：击杀恢复{v}%生命","雷罚：攻击{v}%概率召唤天雷(额外伤害)","冰封：攻击{v}%概率冻结目标1回合"]
+];
+const AFFIX_TIER_W=[60,28,9,3];
+const SET_STONES=[
+  {n:"青云剑诀", e2:{stat:"atkPct",v:15},  e4:{stat:"critAdd",v:15},  d:"2件：攻击+15% · 4件：暴击率+15%"},
+  {n:"玄武真功", e2:{stat:"defPct",v:25},  e4:{stat:"hpRegen",v:50},  d:"2件：防御+25% · 4件：生命回复+50/回合"},
+  {n:"九天雷法", e2:{stat:"spd",v:15},     e4:{stat:"thunder",v:15},  d:"2件：速度+15 · 4件：攻击15%概率引天雷"},
+  {n:"血魔大法", e2:{stat:"vamp",v:10},    e4:{stat:"dmgUp",v:25},    d:"2件：吸血+10% · 4件：伤害加深+25%"}];
+function stoneDropType(i){return SET_STONES[i%4].n;} // 副本→套装石绑定（四路循环）
+
+/* ================= 称号+时装（v2.2 代金券商城） ================= */
+const TITLES=[
+  {n:"剑仙·一剑破万法",cond:"拥有神品以上武器",chk:S=>SLOTS.some(sl=>{const it=S.equip[sl];return it&&it.q>=6;}),v:0},
+  {n:"渊主·万剑归宗",cond:"深渊抵达25层",chk:S=>(S.abyssBest||0)>=25,v:0},
+  {n:"魔尊·血染青天",cond:"血魔大法4件套生效",chk:S=>{const c={};SLOTS.forEach(sl=>{const it=S.equip[sl];if(it&&it.setStone) c[it.setStone]=(c[it.setStone]||0)+1;});return (c["血魔大法"]||0)>=4;},v:0},
+  {n:"帝君·镇压诸天",cond:"通关全部副本",chk:S=>S.unlocked>=DUNGEONS.length,v:0},
+  {n:"逍遥·醉卧美人膝",cond:"商城购买",chk:null,v:100},
+  {n:"暴徒·身家亿贯",cond:"金币累计达百万",chk:S=>S.gold>=1000000,v:0},
+  {n:"非酋·百洗不歪",cond:"洗练累计50次",chk:S=>(S.rwCount||0)>=50,v:0},
+  {n:"欧皇·次次神光",cond:"拥有混沌以上装备",chk:S=>{let f=false;SLOTS.forEach(sl=>{const it=S.equip[sl];if(it&&it.q>=8)f=true;});return f;},v:0},
+  {n:"深渊行者",cond:"深渊抵达10层",chk:S=>(S.abyssBest||0)>=10,v:0},
+  {n:"玉陵霸主",cond:"十二副本全部首杀",chk:S=>Object.keys(S.bossKilled||{}).length>=DUNGEONS.length,v:0},
+];
+const FASHIONS=[
+  {n:"玄夜氅",d:"玄夜蓝金之魂——解锁界面主题「玄夜蓝金」",theme:"night",v:150},
+  {n:"紫霄道袍",d:"紫气东来三万里",v:120},
+  {n:"血煞魔衣",d:"血魔化身之证",v:120},
+  {n:"九霄云纹衣",d:"九天雷法之魂",v:120},
+  {n:"暗金圣铠",d:"神品之辉",v:150},
+  {n:"星辰古袍",d:"创世回廊之证",v:200}];
+function checkTitles(){
+  if(!S.titlesOwned)S.titlesOwned=[];
+  let gained=[];
+  for(const t of TITLES){
+    if(t.chk&&!t.chk(S))continue;
+    if(t.v>0)continue; // 商城称号不走成就
+    if(!S.titlesOwned.includes(t.n)){S.titlesOwned.push(t.n);gained.push(t.n);}
+  }
+  if(gained.length){
+    blog(`【称号】获得称号：${gained.join("、")}`,"sys");
+    toast("新称号："+gained[0]);
+  }
+}
+
+/* ================= 灵宠（v2.1c · 双人作战） ================= */
+const PETS=[{id:"dabao",name:"小狐狸·大宝儿",seal:"狐",cls:"seal-UR",
+  sk:"狐火追击",goldUp:10,
+  quips:["嗷呜——！","这条尾巴今天也能捡钱！","主人冲呀，我在你身后放狐火！","哇，这个爆的可真亮！","嗷呜嗷呜（尾巴摇成风车）","换我上！看我的狐火连珠！"],
+  feedCost:lv=>2000*lv}];
+function petSkillProb(){return Math.min(40,15+(S.pet?S.pet.lv:0));}          // 狐火概率 15%→40%
+function petSkillMult(){return Math.min(2.0,0.6+(S.pet?S.pet.lv:0)*0.08);}   // 狐火倍率 0.6→2.0
+function petGoldUp(){return Math.min(30,10+(S.pet?S.pet.lv:0));}             // 金币+10%→30%
+function petFeedCost(){return 2000*(S.pet?S.pet.lv:1);}
+function feedPet(){
+  if(!S.pet)return;
+  if(S.pet.lv>=10){toast("已满级");return;}
+  const c=PETS[0].feedCost(S.pet.lv);
+  if(S.gold<c){toast("金币不足（需"+c+"）");return;}
+  S.gold-=c;S.pet.lv++;
+  blog(`【灵宠】${PETS[0].name} 升级到 Lv.${S.pet.lv}——狐火更旺了！`,"sys");
+  toast("灵宠升级 Lv."+S.pet.lv);
+  renderAll();autosave();
+}
+function checkPet(){
+  if((S.abyssBest||0)>=10&&!S.pet){
+    S.pet={lv:1};
+    blog("【灵宠】小狐狸·大宝儿 加入队伍！（深渊第10层达成纪念）——双人作战开始！","sys");
+    toast("灵宠解锁：小狐狸·大宝儿！");
+  }
+}
+const DUNGEONS=[
+  {name:"废弃矿洞",  rec:1,   mob:["洞穴蝙蝠","矿洞僵尸","腐尸鼠"],     boss:"矿洞魔王",   qBonus:0, gold:5},
+  {name:"幽暗森林",  rec:10,  mob:["毒蜘蛛","树精","狼人"],             boss:"森林之王",   qBonus:0, gold:14},
+  {name:"古墓遗迹",  rec:20,  mob:["骷髅兵","石像鬼","盗墓贼怨灵"],     boss:"古墓尸王",   qBonus:1, gold:28},
+  {name:"熔岩地窟",  rec:32,  mob:["熔岩蜥蜴","火元素","岩浆巨人"],     boss:"熔岩魔龙",   qBonus:1, gold:50},
+  {name:"冰封王座",  rec:45,  mob:["冰霜巨魔","雪女","寒冰傀儡"],       boss:"冰霜巫妖王", qBonus:1, gold:85},
+  {name:"万妖深谷",  rec:58,  mob:["万妖刺客","千年树妖","九尾妖狐"],   boss:"万妖之王",   qBonus:2, gold:130},
+  {name:"深渊裂隙",  rec:72,  mob:["深渊魔物","虚空行者","暗影刺客"],   boss:"深渊领主",   qBonus:2, gold:200},
+  {name:"天穹圣殿",  rec:88,  mob:["圣殿骑士","天使雕像","圣光祭司"],   boss:"堕落大天使", qBonus:2, gold:300},
+  {name:"星陨荒原",  rec:105, mob:["陨星兽","星纹魔狼","坠星傀儡"],     boss:"陨神化身",   qBonus:3, gold:450},
+  {name:"龙骨墓地",  rec:122, mob:["骨龙幼崽","死灵龙骑","龙裔法师"],   boss:"龙骨至尊",   qBonus:3, gold:650},
+  {name:"混沌边缘",  rec:140, mob:["混沌魔神","虚无之影","毁灭使者"],   boss:"混沌之主",   qBonus:3, gold:900},
+  {name:"创世回廊",  rec:160, mob:["虚空造物","时序守望者","归零者"],   boss:"创世守门人", qBonus:3, gold:1300},
+];
+const PITY_PURPLE=i=>40*(1+i), PITY_ORANGE=i=>150*(1+i); // 保底阈值随副本放大（时间感知）
+/* ================= 状态 ================= */
+let S;
+function newGame(){
+  S={lv:1,xp:0,hp:100,gold:0,pot:5,kills:0,
+     equip:{},bag:[],log:[],
+     dg:0,           // 当前选中副本
+     unlocked:1,     // 已解锁副本数
+     abyssBest:0, abyssF:null, stones:0, stamBuyCnt:0, buffDrop:0, buffXp:0, stoneInv:{}, vouchers:0, playerName:"勇者", titlesOwned:[], titlesOn:"", rwCount:0, cosmetics:{}, fashionsOwned:[], fashionOn:"", renameCount:0,
+     pityP:{},       // 紫保底计数（每副本）
+     pityO:{},       // 橙保底计数（每副本）
+     bossKilled:{},  // BOSS首杀记录
+     bossCd:0};
+  SLOTS.forEach(s=>S.equip[s]=null);
+}
+const R=n=>Math.floor(Math.random()*n);
+const RR=(a,b)=>a+R(b-a+1);
+const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
+/* ================= 属性 ================= */
+function lvBase(){const l=S.lv;return{hp:80+l*22,atk:8+l*5,def:3+l*3,spd:5+l,xp:Math.round(50*Math.pow(l,1.55))};}
+function calcStats(){
+  const b=lvBase();
+  let st={hp:b.hp,atk:b.atk,def:b.def,spd:b.spd,crit:5,critD:150,
+          atkPct:0,defPct:0,hpPct:0,
+          dmgUp:0,dmgDown:0,vamp:0,thorn:0,hpRegen:0,goldUp:0,ignoreDef:0,bossUp:0,
+          critAdd:0,hitAdd:0,dodgeAdd:0,
+          berserk:false,devour:0,thunder:0,freeze:0,immortal:0,guard:false};
+  for(const s of SLOTS){
+    const it=S.equip[s]; if(!it) continue;
+    if(it.base.atk)st.atk+=it.base.atk;
+    if(it.base.def)st.def+=it.base.def;
+    if(it.base.hp)st.hp+=it.base.hp;
+    if(it.base.spd)st.spd+=it.base.spd;
+    for(const a of it.affixes)applyAffix(a,st);
+  }
+  // 套装石刻印统计（v2.1b）：同石≥2件触发2件套，≥4件触发4件套
+  const stoneCnt={};
+  for(const s2 of SLOTS){const it2=S.equip[s2];if(it2&&it2.setStone)stoneCnt[it2.setStone]=(stoneCnt[it2.setStone]||0)+1;}
+  st.stoneCnt=stoneCnt;
+  for(const sd of SET_STONES){
+    const cnt=stoneCnt[sd.n]||0;
+    if(cnt>=2&&sd.e2)st[sd.e2.stat]=(st[sd.e2.stat]||0)+sd.e2.v;
+    if(cnt>=4&&sd.e4)st[sd.e4.stat]=(st[sd.e4.stat]||0)+sd.e4.v;
+  }
+  // %词条：加总后单次乘，封顶防叠乘爆雷
+  st.atkPct=clamp(st.atkPct,0,150); st.defPct=clamp(st.defPct,0,150); st.hpPct=clamp(st.hpPct,0,150);
+  st.atk=Math.round(st.atk*(1+st.atkPct/100));
+  st.def=Math.round(st.def*(1+st.defPct/100));
+  st.hp=Math.round(st.hp*(1+st.hpPct/100));
+  st.crit=clamp(st.crit+st.critAdd,0,85);
+  st.critD=clamp(st.critD,100,400);
+  st.dmgUp=clamp(st.dmgUp,0,200);
+  st.dmgDown=clamp(st.dmgDown,0,60);
+  st.vamp=clamp(st.vamp,0,30);
+  st.thorn=clamp(st.thorn,0,60);
+  st.goldUp=clamp(st.goldUp,0,200);
+  st.ignoreDef=clamp(st.ignoreDef,0,60);
+  st.bossUp=clamp(st.bossUp,0,150);
+  st.hpRegen=Math.min(999,st.hpRegen);
+  st.power=Math.round(st.atk*3+st.def*2+st.hp/4+st.spd*2+st.crit*2+st.dmgUp*2);
+  return st;
+}
+function applyAffix(a,st){
+  const t=a.txt,v=a.v;
+  if(t.includes("攻击力"))st.atkPct+=v;
+  else if(t.includes("防御力"))st.defPct+=v;
+  else if(t.includes("生命值"))st.hpPct+=v;
+  else if(t.includes("速度"))st.spd+=v;
+  else if(t.includes("暴击率"))st.critAdd+=v;
+  else if(t.includes("暴击伤害"))st.critD+=v;
+  else if(t.includes("命中率"))st.hitAdd+=v;
+  else if(t.includes("闪避率"))st.dodgeAdd+=v;
+  else if(t.includes("伤害加深"))st.dmgUp+=v;
+  else if(t.includes("伤害减免"))st.dmgDown+=v;
+  else if(t.includes("吸血"))st.vamp+=v;
+  else if(t.includes("反伤"))st.thorn+=v;
+  else if(t.includes("生命回复"))st.hpRegen+=v;
+  else if(t.includes("金币获取"))st.goldUp+=v;
+  else if(t.includes("破甲"))st.ignoreDef=Math.max(st.ignoreDef,v);
+  else if(t.includes("坚韧"))st.dmgDown+=Math.round(v*0.4);
+  else if(t.includes("狂暴"))st.berserk=true;
+  else if(t.includes("贪婪"))st.dmgUp+=Math.round(v*0.6);
+  else if(t.includes("护体"))st.guard=true;
+  else if(t.includes("斩王"))st.bossUp+=v;
+  else if(t.includes("不灭"))st.immortal=Math.max(st.immortal,v);
+  else if(t.includes("吞噬"))st.devour+=v;
+  else if(t.includes("雷罚"))st.thunder+=v;
+  else if(t.includes("冰封"))st.freeze+=v;
+}
+/* ================= 装备生成 ================= */
+function rollQuality(bonus=0,cap=5){
+  let r=Math.random(),acc=0,res=0;
+  for(let i=0;i<QPROB.length;i++){
+    let p=QPROB[i];
+    if(bonus>0&&i>=2)p*=(1+bonus*0.35);   // 高级副本提高蓝装以上概率（温和加成）
+    acc+=p; if(r<acc){res=i;break;}
+  }
+  return Math.min(res,cap); // 品质封顶随副本走：低副本roll不出顶级货
+}
+const dgCap=i=>Math.min(9,Math.max(2,(ANCHOR_Q[i]??9)+1)); // 十档封顶：0-1玄 2-3地 4-5天 6-7仙神 8-10圣 11创世
+function rollAffix(q,lvl,used){
+  used=used||new Set();
+  let tr=Math.random()*100,tier=0,acc=0;
+  for(let t=0;t<4;t++){acc+=AFFIX_TIER_W[t];if(tr<acc){tier=t;break;}}
+  const pool=AFFIX_POOLS[tier];let idx=R(pool.length),guard=0;
+  while(used.has(tier+"-"+idx)&&guard++<12)idx=R(pool.length);
+  const [lo,hi]=QRANGE[q];
+  const pctLike=!pool[idx].includes("速度")&&!pool[idx].includes("生命回复");
+  const base=pctLike?(tier<=1?8:12):(tier<=1?6:10);
+  const v=Math.max(1,Math.round(base*(lo+Math.random()*(hi-lo))*(1+lvl*0.008)));
+  return {txt:pool[idx].replace("{v}",v),v,tier};
+}
+function genItem(slot,q,lvl){
+  q=q??rollQuality(); lvl=lvl||S.lv;
+  lvl=Math.min(lvl,S.lv+10); // 掉落等级就地折算：高副本爆装按当前穿戴线缩值，看得吃得到
+  const mul=1+lvl*0.11;
+  const it={slot,q,lvl,name:"",base:{},affixes:[]};
+  if(slot==="主手武器"){
+    it.name=WNAMES[R(WNAMES.length)];
+    it.base.atk=Math.round(RR(...QATK[q])*mul/5)*5;
+  }else if(slot==="副手武器"){
+    it.name=ONAMES[R(ONAMES.length)];
+    it.base.def=Math.round(QATK[q][0]*mul*0.15); it.base.hp=Math.round(QATK[q][0]*mul*2);
+  }else if(slot==="饰品"){
+    it.name=["戒指","项链","护符"][R(3)];
+    it.base.atk=Math.round(QATK[q][0]*mul*0.35); it.base.hp=Math.round(QATK[q][0]*mul);
+  }else{
+    it.name=slot;
+    it.base.def=Math.round(QATK[q][0]*mul*0.12); it.base.hp=Math.round(QATK[q][0]*mul*0.7);
+  }
+  const pre=["","精铁","寒光","秘银","巨龙","星辰","弑神","圣裁","混沌","创世"];
+  it.name=(pre[q]?pre[q]+"·":"")+it.name;
+  const nA=RR(...QAFFIX[q]);
+  const used=new Set();
+  for(let i=0;i<nA;i++){
+    it.affixes.push(rollAffix(q,lvl,used));
+    const a=it.affixes[it.affixes.length-1];
+    used.add(a.tier+"-"+AFFIX_POOLS[a.tier].indexOf(a.txt.split(" +")[0]));
+  }
+  return it;
+}
+function itemScore(it){
+  let s=(it.base.atk||0)+(it.base.def||0)*3+(it.base.hp||0)/6+(it.base.spd||0)*3;
+  for(const a of it.affixes){
+    const pctLike=!a.txt.includes("速度")&&!a.txt.includes("生命回复");
+    s+=a.v*(a.tier+1)*(pctLike?4:1);
+  }
+  return s;
+}
+/* ================= 副本（怪物锚定"穿当前主流品质的预期玩家"） ================= */
+const ANCHOR_Q=[-1,1,2,3,4,5,5,6,6,7,8,9]; // 十档制：每副本锚定的玩家装备品质（-1=裸装），神品自天穹起、创世锁终局
+function dgK(i){return 1+i*0.135;}          // 难度系数：1.0 → 2.49
+function expectedPlayer(L,q){
+  const b={hp:80+L*22,atk:8+L*5,def:3+L*3};
+  if(q<0)return{hp:Math.round(b.hp*1.2),atk:Math.round(b.atk*1.2),def:Math.round(b.def*1.2)};
+  const mul=1+L*0.11,A=QATK[q][0];
+  b.hp+=A*mul*(6*0.7+2+1);   // 6防具+副手+饰品的生命
+  b.atk+=A*mul*1.35;         // 主手+饰品攻击
+  b.def+=A*mul*(6*0.12+0.15);// 6防具+副手防御
+  return {hp:Math.round(b.hp*1.6),atk:Math.round(b.atk*1.6),def:Math.round(b.def*1.3)}; // 词条平均收益
+}
+function mobStat(i){
+  const L=DUNGEONS[i].rec, k=dgK(i), e=expectedPlayer(L,ANCHOR_Q[i]);
+  return {name:DUNGEONS[i].mob[R(3)],lv:Math.max(1,L+R(3)),
+    hp:Math.round(e.atk*2.2*k),
+    atk:Math.round(e.hp*0.05*Math.sqrt(k)),
+    def:Math.round(e.atk*0.35),
+    spd:4+L*0.5};
+}
+function bossStat(i){
+  const m=mobStat(i);
+  return {name:"【BOSS】"+DUNGEONS[i].boss,lv:DUNGEONS[i].rec+5,
+    hp:Math.round(m.hp*5), atk:Math.round(m.atk*1.5), def:Math.round(m.def*1.5), spd:m.spd+2, boss:true};
+}
+/* ================= 战斗核心 ================= */
+let fight=null; // {mob, rounds, frozen, guardUsed}
+let timer=null;
+function blog(msg,cls){S.log.push(`<p class="${cls||''}">${msg}</p>`);if(S.log.length>250)S.log.shift();renderLog();}
+function effHit(st){const m=fight.mob;return clamp(88+(st.spd-m.spd)*0.4+st.hitAdd,60,99);}
+function effDodge(st){const m=fight.mob;return clamp(6+(st.spd-m.spd)*0.4+st.dodgeAdd,0,45);}
+function hitMob(st){
+  const m=fight.mob;
+  if(Math.random()>effHit(st)/100){blog(`你的攻击落空了！`);return;}
+  let crit=Math.random()<st.crit/100;
+  let atk=st.atk;
+  if(st.berserk&&S.hp<st.hp*0.3)atk=Math.round(atk*1.5);
+  let d=Math.max(Math.round(atk*0.15),Math.round(atk-Math.max(0,m.def*(1-st.ignoreDef/100))*0.5));
+  d=Math.round(d*(1+st.dmgUp/100));
+  if(crit)d=Math.round(d*st.critD/100);
+  if(m.boss&&st.bossUp)d=Math.round(d*(1+st.bossUp/100));
+  m.hp=Math.max(0,m.hp-d);
+  let extra="";
+  if(st.thunder&&Math.random()<st.thunder/100){const t=Math.round(st.atk*0.8);m.hp=Math.max(0,m.hp-t);extra=` 【天雷】追加 <span class="crit">${t}</span>！`;}
+  blog(`你挥出武器，造成 <span class="${crit?'crit':'dmg'}">${d}</span> 点伤害${crit?'（暴击）':''}！${extra}`);
+  // 灵宠·狐火追击
+  if(S.pet&&Math.random()*100<petSkillProb()){
+    const fd=Math.max(1,Math.round(st.atk*petSkillMult()));
+    m.hp=Math.max(0,m.hp-fd);
+    blog(`<span class="pet">【小狐狸·大宝儿】狐火追击！额外 ${fd} 点伤害</span>`);
+  }
+  if(st.vamp>0){const h=Math.round(d*st.vamp/100);S.hp=Math.min(st.hp,S.hp+h);blog(`【吸血】恢复 <span class="heal">${h}</span> 点生命`);}
+}
+function hitHero(st){
+  const m=fight.mob;
+  if(fight.frozen>0){fight.frozen--;blog(`<span class="enemy">${m.name}</span> 被冻结，无法行动！`,"sys");return;}
+  if(Math.random()<effDodge(st)/100){blog(`你闪避了 <span class="enemy">${m.name}</span> 的攻击！`,"sys");return;}
+  // 百分比减伤制：封顶75%，防御永不把伤害碾到0
+  const C=500+DUNGEONS[S.dg].rec*8;
+  const red=Math.min(0.75,st.def/(st.def+C));
+  let d=Math.max(1,Math.round(m.atk*(1-red)));
+  if(fight.guardUsed===false&&st.guard&&S.hp-d<=0){d=Math.max(0,S.hp-1);fight.guardUsed=true;blog("【护体】宝光炸裂，致命一击只伤你分毫！","sys");}
+  if(st.immortal>0&&S.hp-d<=0&&Math.random()*100<st.immortal){d=Math.max(0,S.hp-1);blog("【不灭】道韵护身，你免死了这一击！","sys");}
+  S.hp=Math.max(0,S.hp-d);
+  blog(`<span class="enemy">${m.name}</span> 反击，造成 <span class="dmg">${d}</span> 点伤害！`);
+  if(st.thorn>0){const t=Math.round(d*st.thorn/100);m.hp=Math.max(0,m.hp-t);blog(`【反伤】反弹 ${t} 点伤害！`,"sys");}
+}
+function fightRound(){
+  if(!fight)return;
+  const st=calcStats();
+  fight.rounds++;
+  hitMob(st);
+  if(fight.mob.hp>0&&S.hp>0)hitHero(st);
+  S.hp=Math.min(st.hp,S.hp+st.hpRegen);
+  renderHp(st);
+  if(fight.mob.hp<=0){winFight(st);return;}
+  if(S.hp<=0){loseFight();return;}
+  if(fight.rounds>=40){blog("战斗拖沓太久，你体力不支撤退了……","dmg");loseFight();return;}
+}
+function winFight(st){
+  const m=fight.mob, dg=DUNGEONS[S.dg], isBoss=!!m.boss;
+  fight=null;
+  if(S.abF&&S.abF.active){abyssWin();return;}
+  S.kills++;
+  if(st.devour>0)S.hp=Math.min(st.hp,S.hp+Math.round(st.hp*st.devour/100));
+  const mobXp=Math.round((8+dg.rec*5.5)*(1+dg.rec*0.01)); // 经验随副本温和成长，治后期等级墙拖沓
+  const xpGain=Math.round(isBoss?mobXp*8:mobXp);
+  gainXp(xpGain);
+  const goldGain=Math.round(RR(dg.gold,dg.gold*2)*(isBoss?4:1)*(1+(st.goldUp+(S.pet?petGoldUp():0))/100)); // 灵宠金币加成
+  S.gold+=goldGain;
+  blog(`—— 胜利！经验+${xpGain} 金币+${goldGain} ——`,"sys");
+  if(isBoss){
+    const firstKill=!S.bossKilled[S.dg];
+    S.bossKilled[S.dg]=true;
+    if(firstKill){
+      const bonus=dg.gold*30;
+      S.gold+=bonus;
+      toast(`首杀大奖：+${bonus} 金币！`);
+    }
+    const q=firstKill?Math.min(3,Math.max(2,2+dg.qBonus+R(2))):Math.max(rollQuality(Math.min(4,dg.qBonus+1),dgCap(S.dg)),Math.max(0,dgCap(S.dg)-4));
+    const it=genItem(SLOTS[R(9)],q,DUNGEONS[S.dg].rec+3);
+    S.bag.push(it);
+    if(Math.random()<0.3){const n=1+R(2);S.stones+=n;blog(`BOSS额外掉落【重铸石】×${n}`,"sys");}
+    if(!S.stoneInv)S.stoneInv={};
+    const stn2=stoneDropType(S.dg);const ns=2;S.stoneInv[stn2]=(S.stoneInv[stn2]||0)+ns;
+    blog(`BOSS掉落【${stn2}·套装石】×${ns}`,"sys");
+    blog(`—— BOSS掉落${firstKill?'（首杀奖励！金币大奖已发放）':''}：<span class="${QCOLOR[it.q]}">${it.name}（${QNAMES[it.q]}）</span>`,"sys");
+    if(it.q>=8)toast(`🌌 ${QNAMES[it.q]}出世：${it.name}！`);
+    else if(it.q>=4)toast(`获得${QNAMES[it.q]}装备：${it.name}`);
+    if(S.dg===S.unlocked-1&&S.unlocked<DUNGEONS.length){
+      S.unlocked++;
+      blog(`—— 通关【${dg.name}】！新副本【${DUNGEONS[S.unlocked-1].name}】已解锁！`,"sys");
+      toast(`解锁新副本：${DUNGEONS[S.unlocked-1].name}`);
+    }else if(S.dg===S.unlocked-1){
+      blog(`—— 你击败了最终 BOSS，已通关全部副本！`,"sys");
+    }
+    stopFarm();
+  }else{
+    S.pityP[S.dg]=(S.pityP[S.dg]||0)+1;
+    S.pityO[S.dg]=(S.pityO[S.dg]||0)+1;
+    let dropQ=null,tag="";
+    if(S.pityO[S.dg]>=PITY_ORANGE(S.dg)){ // 橙轨保底：给该副本封顶品质+金币补贴（低副本长期挂=金币可观）
+      dropQ=dgCap(S.dg); S.pityO[S.dg]=0; S.pityP[S.dg]=0;
+      const subsidy=dg.gold*20;
+      S.gold+=subsidy;
+      tag=`橙轨保底！+${subsidy}金币补贴`;
+      blog(`【橙轨补贴】<span class="heal">+${subsidy}</span> 金币`,"sys");
+    }else if(S.pityP[S.dg]>=PITY_PURPLE(S.dg)){ // 紫轨保底：必紫+
+      dropQ=Math.min(2+Math.min(dg.qBonus,1),dgCap(S.dg)); S.pityP[S.dg]=0; tag="紫轨保底！";
+    }else if(Math.random()<0.35*(S.buffDrop>0?1.2:1)){ // 幸运符：掉率+20%
+      dropQ=rollQuality(dg.qBonus,dgCap(S.dg));
+      dropQ=Math.max(dropQ,Math.max(0,dgCap(S.dg)-4)); // 高图掉落下限：品质封顶-4以下不再出现
+    }
+    if(dropQ!==null){
+      const it=genItem(SLOTS[R(9)],dropQ,DUNGEONS[S.dg].rec);
+      S.bag.push(it);
+      blog(`掉落${tag?`（${tag}）`:''}：<span class="${QCOLOR[it.q]}">${it.name}（${QNAMES[it.q]}）</span>`,"sys");
+      if(it.q>=8)toast(`🌌 ${QNAMES[it.q]}出世：${it.name}！`);
+    else if(it.q>=4)toast(`获得${QNAMES[it.q]}装备：${it.name}`);
+    }
+    if(Math.random()<0.15){S.pot++;blog("拾获【治疗药水】×1","sys");}
+    if(Math.random()<0.03){S.stones++;blog("拾获【重铸石】×1","sys");}
+    if(!S.stoneInv)S.stoneInv={};
+    const stn=stoneDropType(S.dg);
+    if(Math.random()<0.04){S.stoneInv[stn]=(S.stoneInv[stn]||0)+1;blog(`拾获【${stn}·套装石】×1`,"sys");}
+  }
+  if(S.pet&&Math.random()<0.2){
+    const d=PETS[0];
+    blog(`<span class="pet">【${d.name}】${d.quips[R(d.quips.length)]}</span>`);
+  }
+  renderAll();autosave();
+}
+function loseFight(){
+  fight=null;
+  if(S.abF&&S.abF.active){S.hp=Math.round(calcStats().hp*0.6);abyssLose();return;}
+  const st=calcStats();
+  blog("—— 你倒下了……被送回营地，损失 5% 金币 ——","dmg");
+  S.gold=Math.max(0,S.gold-Math.round(S.gold*0.05));
+  S.hp=Math.round(st.hp*0.6);
+  stopFarm();
+  renderAll();autosave();
+}
+function gainXp(v){
+  v=Math.round(v*(S.buffXp>0?1.5:1)); // 经验符：+50%
+  S.xp+=v;
+  let need=lvBase().xp;
+  while(S.xp>=need){
+    S.xp-=need;S.lv++;
+    const st=calcStats();S.hp=st.hp;
+    blog(`⬆ 升级！当前 Lv.${S.lv}，属性提升，生命回满！`,"sys");
+    need=lvBase().xp;
+  }
+}
+/* ================= 自动刷本 ================= */
+function startFarm(){
+  if(timer)return;
+  blog(`▶ 开始自动刷【${DUNGEONS[S.dg].name}】……`,"sys");
+  document.getElementById('btnStop').classList.remove('hidden');
+  document.getElementById('hpWrap').style.display='';
+  timer=setInterval(tick,900);
+  tick();
+}
+function tick(){
+  if(!fight){
+    const st=calcStats();
+    if(S.hp<st.hp*0.35){ // 自动喝药/休整
+      if(S.pot>0){S.pot--;S.hp=Math.min(st.hp,S.hp+Math.round(st.hp*0.5));blog("你喝下【治疗药水】，恢复 50% 生命","sys");}
+      else{S.hp=Math.min(st.hp,S.hp+Math.round(st.hp*0.15));blog("你稍作休整，恢复 15% 生命","sys");}
+      renderAll();return;
+    }
+    fight={mob:mobStat(S.dg),rounds:0,frozen:0,guardUsed:false};
+    blog(`—— 遭遇 <b class="enemy">${fight.mob.name}</b>（Lv.${fight.mob.lv}）——`);
+  }
+  fightRound();
+  updateFarmStat();
+}
+function stopFarm(){
+  if(timer){clearInterval(timer);timer=null;}
+  fight=null;
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('hpWrap').style.display='none';
+  updateFarmStat();
+}
+/* ================= 无尽深渊（v2.1 硬核爬塔） ================= */
+function abyssMob(floor){
+  const base=bossStat(DUNGEONS.length-1); // 以创世BOSS为基准
+  const k=Math.pow(1.18,floor-1)*0.4;     // 首层=创世BOSS的40%（刚毕业可爬），每层+18%（硬核递进）
+  return {name:"深渊·第"+floor+"层 守关者",lv:160+floor,
+    hp:Math.round(base.hp*k), atk:Math.round(base.atk*Math.pow(1.06,floor-1)),
+    def:Math.round(base.def*Math.pow(1.05,floor-1)), spd:Math.round(base.spd+Math.min(60,floor*2)),
+    boss:true};
+}
+function enterAbyss(){
+  if(S.unlocked<DUNGEONS.length){toast("通关创世回廊后解锁无尽深渊");return;}
+  if(S.stam<8){toast("体力不足（需8点）");return;}
+  if(S.abF&&S.abF.active){toast("已在深渊之中");return;}
+  S.stam-=8;
+  S.abF={active:true,floor:Math.max(1,(S.abyssBest||0)-4)};
+  blog(`—— 无尽深渊开启：从第${S.abF.floor}层连战，倒下即征程结束 ——`,"sys");
+  toast("无尽深渊：第"+S.abF.floor+"层起");
+  document.getElementById('btnStop').classList.remove('hidden');
+  startAbyssBattle();
+  renderAll();autosave();
+}
+function startAbyssBattle(){
+  if(!S.abF||!S.abF.active)return;
+  const st0=calcStats();
+  if(S.hp<st0.hp*0.5&&S.pot>0){S.pot--;S.hp=Math.min(st0.hp,S.hp+Math.round(st0.hp*0.5));blog("深渊间隙喝下药水，回复50%","sys");}
+  const floor=S.abF.floor;
+  S.hp=Math.min(S.hp,st0.hp);
+  fight={mob:abyssMob(floor),rounds:0,frozen:0,guardUsed:false};
+  blog(`—— 深渊 第${floor}层 —— <b class="enemy">${fight.mob.name}</b>`,"sys");
+  document.getElementById('hpWrap').style.display='';
+  document.getElementById('farmTitle').textContent="无尽深渊 · 第"+floor+"层";
+  const bt=setInterval(()=>{if(!fight){clearInterval(bt);return;}fightRound();},900);
+}
+function abyssWin(){
+  const floor=S.abF.floor;
+  S.kills++;
+  const st=calcStats();
+  if(st.devour>0)S.hp=Math.min(st.hp,S.hp+Math.round(st.hp*st.devour/100));
+  const cap=Math.min(9,2+Math.floor(floor/3));
+  const q=Math.max(rollQuality(Math.min(8,Math.floor(floor/2)),cap), Math.min(2,cap), Math.max(0,cap-4)); // 层数即品质UP+保底玄品+高层数下限抬升——深渊不出垃圾
+  const it=genItem(SLOTS[R(9)],q,Math.min(163,S.lv+10));
+  S.bag.push(it);
+  blog(`深渊${floor}层掉落：<span class="${QCOLOR[it.q]}">${it.name}（${QNAMES[it.q]}）</span>`,"sys");
+  if(it.q>=8)toast(`🌌 ${QNAMES[it.q]}出世：${it.name}！`);
+  else if(it.q>=4)toast(`获得${QNAMES[it.q]}装备：${it.name}`);
+  if(floor%5===0){const bonus=4000*(floor/5);S.gold+=bonus;S.stones+=2;const vGain=Math.floor(floor/5)*2;S.vouchers=(S.vouchers||0)+vGain;S.stoneInv[SET_STONES[R(4)].n]=(S.stoneInv[SET_STONES[R(4)].n]||0)+3;
+    blog(`—— 深渊里程碑！第${floor}层达成，+${bonus}金币 ——`,"sys");toast("深渊里程碑：第"+floor+"层！");}
+  if(floor>(S.abyssBest||0))S.abyssBest=floor;
+  checkPet();checkTitles();if(S.cosmetics&&S.cosmetics.theme)applyTheme(S.cosmetics.theme);checkTitles();
+  S.abF.floor++;
+  renderAll();autosave();
+  setTimeout(startAbyssBattle,700);
+}
+function abyssLose(){
+  const reached=S.abF.floor-1;
+  if(reached>(S.abyssBest||0))S.abyssBest=reached;
+  S.abF.active=false;
+  blog(`—— 深渊征程结束：本次推进至第${reached}层，最高纪录 第${S.abyssBest}层 ——`,"dmg");
+  toast("深渊结束：最高第"+S.abyssBest+"层");
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('hpWrap').style.display='none';
+  renderAll();autosave();
+}
+function abyssGiveUp(){
+  const reached=S.abF.floor-1;
+  if(reached>(S.abyssBest||0))S.abyssBest=reached;
+  S.abF.active=false;
+  if(fight)fight=null;
+  blog(`—— 放弃深渊：本次推进至第${reached}层，最高纪录 第${S.abyssBest}层 ——`,"sys");
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('hpWrap').style.display='none';
+  renderAll();autosave();
+}
+function challengeBoss(){
+  if(fight||timer){toast("先停止刷本再挑战 BOSS");return;}
+  const st=calcStats();
+  S.hp=st.hp;
+  fight={mob:bossStat(S.dg),rounds:0,frozen:0,guardUsed:false};
+  blog(`—— BOSS 战！【${DUNGEONS[S.dg].name}】—— <b class="enemy">${fight.mob.name}</b>（Lv.${fight.mob.lv}）`,"sys");
+  document.getElementById('hpWrap').style.display='';
+  const bt=setInterval(()=>{
+    if(!fight){clearInterval(bt);document.getElementById('hpWrap').style.display='none';return;}
+    fightRound();
+  },900);
+}
+/* ================= 渲染 ================= */
+const $=id=>document.getElementById(id);
+function renderHp(st){
+  st=st||calcStats();
+  $("hpBar").style.width=Math.max(0,S.hp/st.hp*100)+"%";
+}
+function updateFarmStat(){
+  if(S.abF&&S.abF.active){$("farmStat").textContent=`深渊连战中 · 当前 第${S.abF.floor}层 · 最高 第${S.abyssBest||0}层 · 药水${S.pot}`;return;}
+  const p=S.pityP[S.dg]||0, o=S.pityO[S.dg]||0;
+  $("farmStat").textContent=timer?`刷本中：${DUNGEONS[S.dg].name} · 紫保底 ${p}/${PITY_PURPLE(S.dg)} · 橙保底 ${o}/${PITY_ORANGE(S.dg)}`:"未在刷本";
+  $("farmTitle").textContent=timer?`战斗日志 · ${DUNGEONS[S.dg].name}`:"战斗日志";
+}
+function renderDungeons(){
+  $("dgList").innerHTML=DUNGEONS.map((d,i)=>{
+    const locked=i>=S.unlocked;
+    const cur=i===S.dg;
+    const p=S.pityP[i]||0, o=S.pityO[i]||0;
+    return `<div class="dg ${locked?'lock':''} ${cur?'current':''}">
+      <div class="head">
+        <b>${locked?'[锁] ':''}${d.name}</b>
+        <span class="cmp">推荐 Lv.${d.rec}</span>
+      </div>
+      <div class="row" style="justify-content:space-between; margin-top:4px;">
+        <span class="pity">紫保底 ${p}/${PITY_PURPLE(i)} · 橙 ${o}/${PITY_ORANGE(i)} ${d.qBonus?`<span class="badge">高品质UP</span>`:""}${S.bossKilled[i]?`<span class="badge">已首杀</span>`:""}</span>
+        ${locked?"":`<button class="${cur?'':'primary'}" onclick="selectDg(${i})">${cur?'当前副本':'前往'}</button>`}
+      </div>
+    </div>`;
+  }).join("");
+  const abActive=S.abF&&S.abF.active;
+  const abLocked=S.unlocked<DUNGEONS.length;
+  $("dgList").innerHTML+=`<div class="dg ${abLocked?'lock':''} ${abActive?'current':''}" style="${S.abF&&S.abF.active?'border-color:var(--gold);':''}">
+    <div class="head"><b>🌀 无尽深渊</b><span class="cmp">硬核爬塔 · 连战至倒下 · 失败退5层</span></div>
+    <div class="row" style="justify-content:space-between;margin-top:4px;">
+      <span class="pity">最高纪录 第${S.abyssBest||0}层 · 每层必掉 · 每5层里程碑大奖</span>
+      ${abLocked?'<span class="cmp">[通关创世回廊解锁]</span>':`<button class="primary" onclick="enterAbyss()" ${abActive?'disabled':''}>${abActive?'深渊进行中':'进入深渊（8体力）'}</button>`}
+    </div></div>`;
+}
+function renderHero(){
+  const st=calcStats(),b=lvBase();
+  $("pLevel").textContent=`Lv.${S.lv} ${S.playerName||"勇者"}`;
+  $("pLevel").className=S.cosmetics&&S.cosmetics.nameGlow?S.cosmetics.nameGlow:"";
+  $("titleTag").innerHTML=S.titlesOn?`<span class="tag" style="border-color:var(--gold);color:var(--gold);">${S.titlesOn}</span>`:"";
+  $("pXp").textContent=`${S.xp}/${b.xp}`;
+  $("pXpBar").style.width=Math.min(100,S.xp/b.xp*100)+"%";
+  $("pStats").innerHTML=
+    `<span class="stat">生命 <b>${S.hp}/${st.hp}</b></span>
+     <span class="stat">攻击 <b>${st.atk}</b></span>
+     <span class="stat">防御 <b>${st.def}</b></span>
+     <span class="stat">速度 <b>${st.spd}</b></span>
+     <span class="stat">暴击率 <b>${st.crit}%</b></span>
+     <span class="stat">暴击伤害 <b>${st.critD}%</b></span>
+     <span class="stat">伤害加深 <b>${st.dmgUp}%</b></span>
+     <span class="stat">伤害减免 <b>${st.dmgDown}%</b></span>
+     <span class="stat">吸血 <b>${st.vamp}%</b></span>
+     <span class="stat">反伤 <b>${st.thorn}%</b></span>
+     <span class="stat">生命回复 <b>${st.hpRegen}/回合</b></span>
+     ${st.ignoreDef?`<span class="stat">破甲 <b>${st.ignoreDef}%</b></span>`:""}
+     ${st.bossUp?`<span class="stat">BOSS伤害 <b>+${st.bossUp}%</b></span>`:""}
+     ${st.goldUp?`<span class="stat">金币获取 <b>+${st.goldUp}%</b></span>`:""}
+     ${Object.keys(st.stoneCnt||{}).map(n=>{
+       const cnt=st.stoneCnt[n];const sd=SET_STONES.find(x=>x.n===n);
+       const act=(cnt>=2?'2件套':'')+(cnt>=4?(cnt>=2?' · 4件套':'4件套'):'');
+       return `<span class="stat">${n} <b>×${cnt}</b> ${act?`<span class="tag">${act}生效</span>`:''}</span>`;}).join("")}`;
+  // 灵宠面板
+  const pb=$("petBody");
+  if(S.pet){
+    const d=PETS[0];
+    const cost=d.feedCost(S.pet.lv);
+    const maxed=S.pet.lv>=10;
+    pb.innerHTML=`<div class="row">
+      <span class="headSeal ${d.cls} hs-sm">${d.seal}</span>
+      <span><b class="pet">${d.name}</b> <span class="stars" style="font-size:9px;">Lv.${S.pet.lv}/10</span></span>
+      <span class="cmp" style="margin-left:auto;">狐火 ${petSkillProb()}% · 倍率×${petSkillMult().toFixed(2)} · 金币+${petGoldUp()}%</span></div>
+      <div style="margin-top:4px;">
+        <button ${maxed?'disabled':''} onclick="feedPet()" class="${maxed?'':'primary'}">${maxed?'已满级':`喂食升级（${cost}金）`}</button>
+        <span class="cmp">狐火概率+1% · 倍率+0.08 / 级</span></div>`;
+  }else{
+    const need=10-(S.abyssBest||0);
+    pb.innerHTML=`<div class="cmp">灵宠位虚位以待——深渊抵达第10层后解锁【小狐狸·大宝儿】（还差 ${Math.max(0,need)} 层）</div>`;
+  }
+  $("pPower").textContent=st.power;
+  $("pKills").textContent=S.kills;
+  $("pPot").textContent=S.pot;
+  $("pGold").textContent=S.gold;
+  $("pStones").textContent=S.stones||0;
+  $("stamPrice").textContent=stamPrice();
+  $("buffState").textContent=`掉率符${S.buffDrop||0}分 · 经验符${S.buffXp||0}分`;
+  $("vCount").textContent=S.vouchers||0;
+  $("btnRename").classList.toggle("hidden", !(S.renameCount>0));
+  $("rnCnt").textContent=S.renameCount||0;
+}
+function renderSlots(){
+  $("slots").innerHTML=SLOTS.map(s=>{
+    const it=S.equip[s];
+    return `<div class="slot" onclick="${it?`showEquipped('${s}')`:''}">
+      <b>${s}</b>${it?`<span class="${QCOLOR[it.q]}">${it.name}</span><br><span class="cmp">点击查看</span>`:"<span class='cmp'>空</span>"}
+    </div>`;
+  }).join("");
+}
+function renderBag(){
+  $("bagCount").textContent=`(${S.bag.length} 件 · 已按品质排序 · 点击查看详情)`;
+  const order=S.bag.map((it,i)=>({it,i})).sort((a,b)=>b.it.q-a.it.q||itemScore(b.it)-itemScore(a.it));
+  $("bagList").innerHTML=order.length?order.map(({it,i})=>
+    `<div class="item" onclick="showBagItem(${i})">
+      <div class="nm ${QCOLOR[it.q]}">${it.name} <span class="cmp">[${it.slot}·${QNAMES[it.q]}·Lv.${it.lvl}${it.lvl>S.lv+10?`·需Lv.${it.lvl-10}`:''}]</span></div>
+    </div>`).join(""):"<p class='cmp'>背包空空，去刷副本吧！</p>";
+}
+function renderLog(){$("battleLog").innerHTML=S.log.join("");$("battleLog").scrollTop=1e6;}
+function renderAll(){renderDungeons();renderHero();renderSlots();renderBag();renderHp();updateFarmStat();}
+/* ================= 装备详情弹窗 ================= */
+function affixHtml(it){
+  const base=Object.entries(it.base).map(([k,v])=>({atk:"攻击",def:"防御",hp:"生命",spd:"速度"}[k])+` +${v}`).join("　");
+  const aff=it.affixes.map(a=>`<div class="affix">◆ ${a.txt.replace("{v}",a.v)}</div>`).join("");
+  return `<div class="affix" style="color:var(--ink)">${base}</div>${aff||'<div class="affix">无词条</div>'}`;
+}
+function cmpHtml(it){
+  const cur=S.equip[it.slot];
+  if(!cur)return `<span class="up">当前部位为空，直接穿！</span>`;
+  const diff=itemScore(it)-itemScore(cur);
+  return `对比当前【${cur.name}】<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(Math.round(diff))} 分</span>`;
+}
+window.showBagItem=i=>{
+  const it=S.bag[i];if(!it)return;
+  $("modalBox").className=it.q>=8?"box deepSpace":"box";
+  $("modalBox").innerHTML=`
+    <h2 class="${QCOLOR[it.q]}" style="margin-bottom:4px;">${it.name}</h2>
+    <div class="cmp" style="margin-bottom:6px;">${it.slot} · ${QNAMES[it.q]} · Lv.${it.lvl}${it.lvl>S.lv+10?` <span class="down">（需Lv.${it.lvl-10}）</span>`:''} · 评分 ${Math.round(itemScore(it))}</div>
+    ${affixHtml(it)}
+    <div class="cmp" style="margin:8px 0;">${cmpHtml(it)}</div>
+    <button class="primary" onclick="equipItem(${i})">穿 戴</button>
+    ${it.affixes.length?`<button class="gold" onclick="openRework(${i})">洗练（锁2条重随）</button>`:''}
+    <button onclick="openEngrave(${i},'bag')">刻印套装石${it.setStone?`（已刻·${it.setStone}）`:''}</button>
+    <button onclick="sellItem(${i})">出 售（+${sellPrice(it)}金币）</button>
+    <button onclick="closeModal()">关 闭</button>`;
+  $("modal").classList.remove("hidden");
+};
+window.showEquipped=s=>{
+  const it=S.equip[s];if(!it)return;
+  $("modalBox").innerHTML=`
+    <h2 class="${QCOLOR[it.q]}" style="margin-bottom:4px;">${it.name} <span class="badge">已穿戴</span></h2>
+    <div class="cmp" style="margin-bottom:6px;">${it.slot} · ${QNAMES[it.q]} · Lv.${it.lvl} · 评分 ${Math.round(itemScore(it))}</div>
+    ${affixHtml(it)}
+    <div style="margin-top:8px;">
+    <button onclick="unequipItem('${s}')">卸 下</button>
+    <button onclick="openEngrave(-1,'eq','${s}')">刻印套装石${it.setStone?`（已刻·${it.setStone}）`:''}</button>
+    <button onclick="closeModal()">关 闭</button></div>`;
+  $("modal").classList.remove("hidden");
+};
+window.closeModal=()=>{$("modal").classList.add("hidden");$("modalBox").className="box";};
+$("modal").onclick=e=>{if(e.target.id==="modal")closeModal();};
+function sellPrice(it){return Math.round(QATK[it.q][0]*QPOW[it.q]*0.1)+it.lvl;}
+window.equipItem=i=>{
+  const it=S.bag[i];if(!it)return;
+  if(it.lvl>S.lv+10){toast(`等级不足：该装备需要 Lv.${it.lvl-10} 以上`);return;}
+  const old=S.equip[it.slot];
+  S.equip[it.slot]=it;S.bag.splice(i,1);
+  if(old)S.bag.push(old);
+  const st=calcStats();S.hp=Math.min(S.hp,st.hp);
+  toast(`已穿戴 ${it.name}`);closeModal();renderAll();autosave();
+};
+window.unequipItem=s=>{
+  const it=S.equip[s];if(!it)return;
+  S.equip[s]=null;S.bag.push(it);
+  const st=calcStats();S.hp=Math.min(S.hp,st.hp);
+  closeModal();renderAll();autosave();
+};
+window.sellItem=i=>{
+  const it=S.bag[i];if(!it)return;
+  const p=sellPrice(it);
+  S.gold+=p;S.bag.splice(i,1);
+  toast(`已出售，+${p}金币`);closeModal();renderAll();autosave();
+};
+window.sellJunk=maxQ=>{
+  maxQ=maxQ||1;
+  let n=0,g=0;
+  S.bag=S.bag.filter(it=>{if(it.q<=maxQ){n++;g+=sellPrice(it);return false;}return true;});
+  S.gold+=g;
+  toast(n?`出售 ${n} 件装备，+${g} 金币`:"没有可出售的低品质装备");
+  renderAll();autosave();
+};
+window.selectDg=i=>{
+  if(i>=S.unlocked)return;
+  stopFarm();S.dg=i;
+  blog(`—— 前往【${DUNGEONS[i].name}】——`,"sys");
+  renderAll();autosave();
+  startFarm();
+};
+/* ================= 其他操作 ================= */
+$("btnStop").onclick=()=>{
+  if(S.abF&&S.abF.active){abyssGiveUp();return;}
+  stopFarm();blog("—— 停止刷本。","sys");};
+$("btnBoss").onclick=challengeBoss;
+$("btnPotion").onclick=()=>{
+  if(S.pot<=0){toast("没有药水了");return;}
+  const st=calcStats();
+  if(S.hp>=st.hp){toast("生命已满");return;}
+  S.pot--;S.hp=Math.min(st.hp,S.hp+Math.round(st.hp*0.5));
+  toast("恢复 50% 生命");renderAll();autosave();
+};
+$("btnBuyPot").onclick=()=>{
+  if(S.gold<100){toast("金币不足");return;}
+  S.gold-=100;S.pot++;
+  toast("购得【治疗药水】×1");renderAll();autosave();
+};
+$("btnSave").onclick=()=>{autosave();toast("已保存");};
+$("btnWipe").onclick=()=>{if(confirm("确定删档重来？")){stopFarm();localStorage.removeItem("bzyz_v2_save");newGame();S.hp=calcStats().hp;blog("新的冒险开始了……","sys");renderAll();}};
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  ["dungeon","hero","bag"].forEach(t=>$("tab-"+t).classList.toggle("hidden",t!==b.dataset.tab));
+});
+/* ================= 词条重铸（洗练 v2.1a） ================= */
+function rwCost(it){
+  const n=(it.locks||[]).filter(Boolean).length;
+  return {gold:400+800*n, stone:1+n};
+}
+function openRework(i){
+  const it=S.bag[i];if(!it)return;
+  if(!it.affixes.length){toast("这件装备没有词条可洗");return;}
+  if(!it.locks)it.locks=it.affixes.map(()=>false);
+  S.rwIdx=i;
+  drawRework();
+}
+function drawRework(){
+  const i=S.rwIdx, it=S.bag[i];
+  const n=(it.locks||[]).filter(Boolean).length;
+  const c=rwCost(it);
+  const rows=it.affixes.map((a,idx)=>{
+    const locked=it.locks&&it.locks[idx];
+    return `<div class="affix" style="display:flex;justify-content:space-between;align-items:center;margin:2px 0;">
+      <span class="${locked?'up':''}">${locked?'🔒':'◆'} ${a.txt.replace("{v}",a.v)}</span>
+      <button onclick="toggleLock(${idx})" style="font-size:11px;padding:2px 8px;">${locked?'解锁':'锁定'}</button></div>`;
+  }).join("");
+  const warn=n>=2?`<div class="down" style="font-size:11.5px;">锁定已达上限（最多2条）</div>`:"";
+  $("modalBox").innerHTML=`<h2>词条重铸 · ${it.name}</h2>
+    <div class="cmp">锁定最多2条——未锁定的词条将全部重新随机（类型+数值）。锁得越多，花费越高。</div>
+    <div style="margin:6px 0;">${rows}${warn}</div>
+    <div class="cmp">本次费用：金币 ${c.gold} · 重铸石 ×${c.stone}（现有 ${S.stones}）</div>
+    <div style="margin-top:8px;">
+      <button class="primary" onclick="doRework()" ${(S.gold<c.gold||S.stones<c.stone)?'disabled':''}>开始洗练</button>
+      <button onclick="showBagItem(${i});S.rwIdx=null;">返回</button></div>`;
+}
+function toggleLock(idx){
+  const it=S.bag[S.rwIdx];
+  const cur=it.locks.filter(Boolean).length;
+  if(!it.locks[idx]&&cur>=2){toast("最多锁定2条");return;}
+  it.locks[idx]=!it.locks[idx];
+  drawRework();
+}
+function doRework(){
+  const i=S.rwIdx, it=S.bag[i];
+  const c=rwCost(it);
+  if(S.gold<c.gold){toast("金币不足");return;}
+  if(S.stones<c.stone){toast("重铸石不足——高等级图与深渊BOSS有掉");return;}
+  S.gold-=c.gold;S.stones-=c.stone;S.rwCount=(S.rwCount||0)+1;
+  const q=it.q, lvl=it.lvl;
+  it.affixes=it.affixes.map((a,idx)=>it.locks&&it.locks[idx]?a:rollAffix(q,lvl));
+  blog(`【洗练】${it.name} 词条重铸完成（锁定${(it.locks||[]).filter(Boolean).length}条）`,"sys");
+  toast("洗练完成——看看歪没歪！");
+  drawRework();checkTitles();renderAll();autosave();
+}
+
+/* ================= 套装石刻印（v2.1b） ================= */
+let engraveCtx=null;
+function openEngrave(i,src,slot){
+  engraveCtx={i,src,slot};
+  if(!S.stoneInv)S.stoneInv={};
+  const cur=src==="bag"?S.bag[i]:S.equip[slot];
+  const rows=SET_STONES.map(sd=>{
+    const cnt=S.stoneInv[sd.n]||0;
+    const equipped=cur.setStone===sd.n;
+    return `<div class="item" style="cursor:default;">
+      <div class="row" style="justify-content:space-between;">
+        <span><b>${sd.n}</b> <span class="cmp">库存 ×${cnt}${equipped?' · 已刻印此件':''}</span></span>
+        <button ${(cnt<=0||equipped)?'disabled':''} onclick="doEngrave('${sd.n}')">${equipped?'已刻印':'刻印'}</button></div>
+      <div class="cmp">${sd.d}</div></div>`;
+  }).join("");
+  $("modalBox").innerHTML=`<h2>套装石刻印 · ${cur.name}</h2>
+    <div class="cmp">将套装效果刻印到装备上：同名套装石刻印≥2件触发2件套效果，≥4件触发4件套。重刻将覆盖（旧石不返还）。</div>
+    <div style="margin:6px 0;">${rows}</div>
+    <button onclick="${src==='bag'?`showBagItem(${i})`:`showEquipped('${slot}')`}">返回</button>`;
+  $("modal").classList.remove("hidden");
+}
+function doEngrave(name){
+  if(!engraveCtx)return;
+  if((S.stoneInv[name]||0)<=0){toast("库存不足");return;}
+  S.stoneInv[name]--;
+  const cur=engraveCtx.src==="bag"?S.bag[engraveCtx.i]:S.equip[engraveCtx.slot];
+  cur.setStone=name;
+  toast(`已刻印【${name}】到 ${cur.name}`);
+  blog(`【刻印】${cur.name} 获得套装效果【${name}】`,"sys");
+  renderAll();autosave();
+  closeModal();
+}
+
+/* ================= 体力商店 + 幸运符 ================= */
+function stamPrice(){return 500+(S.stamBuyCnt||0)*500;}
+function buyStam(){
+  const c=stamPrice();
+  if(S.gold<c){toast("金币不足（需"+c+"）");return;}
+  S.gold-=c;S.stamBuyCnt++;S.stam+=30;
+  toast("体力+30（下次"+stamPrice()+"金）");blog(`【体力】购得体力30点，花费${c}金币`,"sys");
+  renderAll();autosave();
+}
+function buyBuff(kind){
+  if(kind==="drop"){
+    if(S.gold<2000){toast("金币不足（需2000）");return;}
+    S.gold-=2000;S.buffDrop=(S.buffDrop||0)+30;
+    blog("【幸运符】掉率+20%（30分钟）已激活","sys");toast("掉率幸运符+30分钟");
+  }else{
+    if(S.gold<1500){toast("金币不足（需1500）");return;}
+    S.gold-=1500;S.buffXp=(S.buffXp||0)+30;
+    blog("【经验符】经验+50%（30分钟）已激活","sys");toast("经验幸运符+30分钟");
+  }
+  renderAll();autosave();
+}
+setInterval(()=>{ // 幸运符每分钟衰减
+  if(S&&(S.buffDrop>0||S.buffXp>0)){
+    if(S.buffDrop>0)S.buffDrop--;
+    if(S.buffXp>0)S.buffXp--;
+    if(S.buffDrop===0)blog("【幸运符】掉率加成到期","sys");
+    if(S.buffXp===0)blog("【经验符】经验加成到期","sys");
+    renderHome();autosave();
+  }
+},60000);
+
+function applyTheme(t){
+  if(t==="night"){document.body.dataset.theme="night";}
+  else{delete document.body.dataset.theme;}
+}
+/* ================= 代金券商城（v2.2） ================= */
+$("btnMall").onclick=()=>showMall();
+function showMall(){
+  const owned=S.titlesOwned||[];
+  const shopTitles=TITLES.filter(t=>t.v>0);
+  const titleRows=shopTitles.map(t=>{
+    const has=owned.includes(t.n);
+    return `<div class="item" style="cursor:default;">
+      <div class="row" style="justify-content:space-between;">
+        <span><b class="pet">${t.n}</b> <span class="cmp">长称号</span></span>
+        ${has?`<span class="up">已拥有</span>`:`<button onclick="buyTitle('${t.n}')">${t.v}券</button>`}
+      </div></div>`;
+  }).join("");
+  const myTitles=owned.map(n=>`<button onclick="wearTitle('${n}')" class="${S.titlesOn===n?'primary':''}" style="font-size:12px;">${n}</button>`).join("")||"<span class='cmp'>尚无称号——成就称号随进度自动获得</span>";
+  const fashionRows=FASHIONS.map(f=>{
+    const has=(S.fashionsOwned||[]).includes(f.n);
+    const on=S.fashionOn===f.n;
+    return `<div class="item" style="cursor:default;">
+      <div class="row" style="justify-content:space-between;">
+        <span><b>${f.n}</b> <span class="cmp">${f.d}</span></span>
+        ${has?`<button onclick="wearFashion('${f.n}')" class="${on?'primary':''}">${on?'穿着中':'穿上'}</button>`:`<button onclick="buyFashion('${f.n}')">${f.v}券</button>`}
+      </div></div>`;
+  }).join("");
+  const glows=[["q6","暗金呼吸"],["q7","圣虹流动"],["q8","深空金星"],["q9","创世虹光"]];
+  const glowRows=glows.map(([c,n])=>{
+    const has=(S.cosmetics&&S.cosmetics.nameGlow===c);
+    return `<button onclick="buyGlow('${c}')" class="${has?'primary':''}" style="font-size:12px;">${has?'佩戴中':n+' · 50券'}</button>`;
+  }).join("");
+  $("modalBox").innerHTML=`<h2>代金券商城 <span class="cmp">余额：<b class="pet">${S.vouchers||0}</b> 券</span></h2>
+    <div class="panel" style="margin:6px 0;">
+      <h2>称号（成就称号自动获得 · 佩戴在名字旁）</h2>
+      <div class="row">${myTitles}</div>
+      ${titleRows}
+    </div>
+    <div class="panel" style="margin:6px 0;">
+      <h2>时装 · 衣橱</h2>
+      <div class="cmp">当前穿着：${S.fashionOn||"无"}</div>
+      ${fashionRows}
+    </div>
+    <div class="panel" style="margin:6px 0;">
+      <h2>名字流光</h2>
+      <div class="row">${glowRows}</div>
+    </div>
+    <div class="panel" style="margin:6px 0;">
+      <h2>界面主题</h2>
+      <div class="row">
+        <button onclick="pickTheme('')" class="${!S.cosmetics||!S.cosmetics.theme?'primary':''}">水墨米白（默认）</button>
+        <button onclick="pickTheme('night')" class="${S.cosmetics&&S.cosmetics.theme==='night'?'primary':''}" ${(S.fashionsOwned||[]).includes('玄夜氅')?'':'disabled title="需时装·玄夜氅"'}>玄夜蓝金${(S.fashionsOwned||[]).includes('玄夜氅')?'':'（需时装·玄夜氅）'}</button>
+      </div>
+    </div>
+    <div class="panel" style="margin:6px 0;">
+      <h2>消耗与实用</h2>
+      <div class="row">
+        <button onclick="buyRename()">改名符 · 80券</button>
+        <button onclick="buyVoucherPack()">金币兑券（50000金→10券）</button>
+      </div>
+      <div class="cmp">改名符：购买后可在角色页修改你的名字。</div>
+    </div>
+    <div class="panel" style="margin:6px 0;">
+      <h2>弹窗美化（即将上架）</h2>
+      <div class="cmp">星宇陈列 · 鎏金画框 · 藏宝阁铭牌 · 战力雷达 —— 施工中，敬请期待</div>
+    </div>
+    <button onclick="closeModal()">关闭</button>`;
+  $("modal").classList.remove("hidden");
+}
+function buyTitle(n){
+  const t=TITLES.find(x=>x.n===n);if(!t)return;
+  if((S.vouchers||0)<t.v){toast("代金券不足");return;}
+  S.vouchers-=t.v;S.titlesOwned.push(n);
+  blog(`【商城】购得称号「${n}」`,"sys");toast("称号已入手："+n);
+  showMall();renderAll();autosave();
+}
+function wearTitle(n){S.titlesOn=S.titlesOn===n?"":n;blog(S.titlesOn?`【称号】佩戴「${n}」`:"【称号】摘下称号");showMall();renderAll();autosave();}
+function buyFashion(n){
+  const f=FASHIONS.find(x=>x.n===n);if(!f)return;
+  if((S.vouchers||0)<f.v){toast("代金券不足");return;}
+  S.vouchers-=f.v;S.fashionsOwned.push(n);
+  blog(`【商城】购得时装「${f.n}」`,"sys");toast("时装已入手："+f.n);
+  if(f.theme){S.cosmetics=S.cosmetics||{};S.cosmetics.theme=f.theme;applyTheme(f.theme);toast("时装附带主题已激活！");}
+  showMall();renderAll();autosave();
+}
+function wearFashion(n){S.fashionOn=S.fashionOn===n?"":n;
+  const f=FASHIONS.find(x=>x.n===n);
+  if(f&&f.theme&&S.fashionOn===n){S.cosmetics=S.cosmetics||{};S.cosmetics.theme=f.theme;applyTheme(f.theme);}
+  showMall();renderAll();autosave();}
+function buyGlow(c){
+  if((S.vouchers||0)<50){toast("代金券不足（需50）");return;}
+  if(S.cosmetics&&S.cosmetics.nameGlow===c){delete S.cosmetics.nameGlow;toast("已摘下名字流光");}
+  else{S.vouchers-=50;S.cosmetics=S.cosmetics||{};S.cosmetics.nameGlow=c;blog("【商城】名字流光已激活","sys");toast("名字流光已佩戴");}
+  showMall();renderAll();autosave();
+}
+function buyRename(){
+  if((S.vouchers||0)<80){toast("代金券不足（需80）");return;}
+  S.vouchers-=80;S.renameCount=(S.renameCount||0)+1;
+  toast("改名符×1入手——角色页可使用");blog("【商城】购得改名符×1","sys");
+  showMall();renderAll();autosave();
+}
+function useRename(){
+  if((S.renameCount||0)<=0){toast("没有改名符");return;}
+  const n=prompt("请输入新的名字（6字以内）：",S.playerName||"勇者");
+  if(!n)return;
+  const nm=n.trim().slice(0,6);
+  if(!nm){toast("名字不能为空");return;}
+  S.renameCount--;S.playerName=nm;
+  blog(`【改名】勇者已更名为「${nm}」`,"sys");toast("改名成功："+nm);
+  renderAll();autosave();
+}
+function pickTheme(t){
+  if(t==="night"&&!(S.fashionsOwned||[]).includes("玄夜氅")){toast("需先拥有时装·玄夜氅");return;}
+  S.cosmetics=S.cosmetics||{};
+  S.cosmetics.theme=t||"";
+  applyTheme(t);
+  blog(t?"【主题】切换至玄夜蓝金":"【主题】切换至水墨米白","sys");
+  showMall();renderAll();autosave();
+}
+function buyVoucherPack(){
+  if(S.gold<50000){toast("金币不足（需50000）");return;}
+  S.gold-=50000;S.vouchers=(S.vouchers||0)+10;
+  blog("【商城】金币兑换代金券×10","sys");toast("代金券+10");
+  showMall();renderAll();autosave();
+}
+/* ================= 存档 ================= */
+function autosave(){try{localStorage.setItem("bzyz_v2_save",JSON.stringify(S));}catch(e){}}
+function load(){
+  try{
+    const d=localStorage.getItem("bzyz_v2_save");
+    if(d){
+      // v2.1a字段修补：老档缺省合并+NaN清理（防undefined传染）
+      S=Object.assign({stones:0,stamBuyCnt:0,buffDrop:0,buffXp:0,abyssBest:0,abF:null,stoneInv:{},vouchers:0,playerName:"勇者",titlesOwned:[],titlesOn:"",rwCount:0,cosmetics:{},fashionsOwned:[],fashionOn:"",renameCount:0},JSON.parse(d));
+      // NaN在JSON序列化中变null——null/NaN双查
+      if(S.gold===null||isNaN(S.gold)){S.gold=50000;
+        setTimeout(()=>{toast("存档金币数据损坏——赔礼50000金币！");blog("【系统】检测到存档金币损坏，已赔礼50000金币","sys");},800);}
+      ["stones","stamBuyCnt","buffDrop","buffXp","abyssBest"].forEach(k=>{if(S[k]===null||S[k]===undefined||isNaN(S[k]))S[k]=0;});
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function toast(m){const t=$("toast");t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,1800);}
+/* ================= 启动 ================= */
+if(!load()){newGame();blog("欢迎来到《爆装勇者》v2.0！点击副本列表中的【前往】开始自动刷怪吧！","sys");}
+checkPet();checkTitles();if(S.cosmetics&&S.cosmetics.theme)applyTheme(S.cosmetics.theme);
+const st0=calcStats();if(!S.hp||S.hp>st0.hp)S.hp=st0.hp;
+renderAll();renderLog();
+</script>
+</body>
+</html>
