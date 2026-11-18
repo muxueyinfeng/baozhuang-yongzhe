@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>爆装勇者 v2.0 · 重铸根基</title>
+<title>爆装勇者 v3.0 · 命星系统</title>
 <style>
   :root{
     --bg:#F5F5F0; --ink:#2C2C2C; --accent:#8B4513; --blue:#4682B4;
@@ -121,12 +121,29 @@
 </head>
 <body>
 <h1>爆装勇者</h1>
-<div class="sub">v2.0.1 · 自动刷本 · 双轨保底 · 品质封顶随副本 · 首杀金币大奖 · 十二副本</div>
+<div class="sub">v3.0 · 命星系统 · 北斗七星+二十八星宿+天书 · 星宿池/北斗副本 · 创世回廊毕业图爆率重制</div>
 
 <div class="tabs">
   <button data-tab="dungeon" class="on">副本</button>
+  <button data-tab="star">星宿</button>
   <button data-tab="hero">角色</button>
   <button data-tab="bag">装备背包</button>
+</div>
+
+<!-- ===== 星宿页（v3.0 命星系统）===== -->
+<div id="tab-star" class="hidden">
+  <div class="panel">
+    <h2>北斗副本 · 七星与天书专属</h2>
+    <div id="bdMaps"></div>
+  </div>
+  <div class="panel">
+    <h2>星宿池 · 二十八宿专属</h2>
+    <div id="poolMaps"></div>
+  </div>
+  <div class="panel" id="petPanel">
+    <h2>灵宠 · 双人作战</h2>
+    <div id="petBody"></div>
+  </div>
 </div>
 
 <!-- ===== 副本页 ===== -->
@@ -175,13 +192,16 @@
       <button id="btnWipe">删档重来</button>
     </div>
   </div>
-  <div class="panel" id="petPanel">
-    <h2>灵宠 · 双人作战</h2>
-    <div id="petBody"></div>
-  </div>
   <div class="panel">
     <h2>已穿戴（9部位）· 点击查看</h2>
     <div class="slots" id="slots"></div>
+  </div>
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;">命星阵（7主星 · 7出战 · 1天书）</h2>
+      <button onclick="openStarBook()">📖 收集册 / 星宿行囊</button>
+    </div>
+    <div class="slots" id="starSlots" style="margin-top:6px;"></div>
   </div>
 </div>
 
@@ -194,6 +214,8 @@
       <button onclick="sellJunk(2)">一键出售 灰/绿/蓝</button>
       <span class="stat" style="margin-left:auto;">金币 <b id="pGold">0</b></span>
       <span class="stat">重铸石 <b id="pStones">0</b></span>
+      <span class="stat">星髓 <b id="pMarrow">0</b></span>
+      <span class="stat">周天星砂 <b id="pDust">0</b></span>
     </div>
     <div class="row" style="margin-bottom:6px;">
       <button onclick="buyStam()">买体力+30（<span id="stamPrice">500</span>金）</button>
@@ -249,13 +271,13 @@ const TITLES=[
   {n:"剑仙·一剑破万法",cond:"拥有神品以上武器",chk:S=>SLOTS.some(sl=>{const it=S.equip[sl];return it&&it.q>=6;}),v:0},
   {n:"渊主·万剑归宗",cond:"深渊抵达25层",chk:S=>(S.abyssBest||0)>=25,v:0},
   {n:"魔尊·血染青天",cond:"血魔大法4件套生效",chk:S=>{const c={};SLOTS.forEach(sl=>{const it=S.equip[sl];if(it&&it.setStone) c[it.setStone]=(c[it.setStone]||0)+1;});return (c["血魔大法"]||0)>=4;},v:0},
-  {n:"帝君·镇压诸天",cond:"通关全部副本",chk:S=>S.unlocked>=DUNGEONS.length,v:0},
+  {n:"帝君·镇压诸天",cond:"通关全部副本",chk:S=>S.unlocked>=12,v:0},
   {n:"逍遥·醉卧美人膝",cond:"商城购买",chk:null,v:100},
   {n:"暴徒·身家亿贯",cond:"金币累计达百万",chk:S=>S.gold>=1000000,v:0},
   {n:"非酋·百洗不歪",cond:"洗练累计50次",chk:S=>(S.rwCount||0)>=50,v:0},
   {n:"欧皇·次次神光",cond:"拥有混沌以上装备",chk:S=>{let f=false;SLOTS.forEach(sl=>{const it=S.equip[sl];if(it&&it.q>=8)f=true;});return f;},v:0},
   {n:"深渊行者",cond:"深渊抵达10层",chk:S=>(S.abyssBest||0)>=10,v:0},
-  {n:"玉陵霸主",cond:"十二副本全部首杀",chk:S=>Object.keys(S.bossKilled||{}).length>=DUNGEONS.length,v:0},
+  {n:"玉陵霸主",cond:"十二副本全部首杀",chk:S=>Object.keys(S.bossKilled||{}).filter(k=>+k<12).length>=12,v:0},
 ];
 const FASHIONS=[
   {n:"玄夜氅",d:"玄夜蓝金之魂——解锁界面主题「玄夜蓝金」",theme:"night",v:150},
@@ -317,7 +339,72 @@ const DUNGEONS=[
   {name:"龙骨墓地",  rec:122, mob:["骨龙幼崽","死灵龙骑","龙裔法师"],   boss:"龙骨至尊",   qBonus:3, gold:650},
   {name:"混沌边缘",  rec:140, mob:["混沌魔神","虚无之影","毁灭使者"],   boss:"混沌之主",   qBonus:3, gold:900},
   {name:"创世回廊",  rec:160, mob:["虚空造物","时序守望者","归零者"],   boss:"创世守门人", qBonus:3, gold:1300},
+  /* ===== v3.0 星宿线（index 12-15 星宿池·专爆28宿 / 16-23 北斗副本·专爆七星+天书）难度全超副本12，越往上越难 ===== */
+  {name:"星宿池·壹", rec:170, mob:["坠星游魂","星尘蛾","观星童子"],         boss:"司星官·观澜", qBonus:0, gold:1500},
+  {name:"星宿池·贰", rec:180, mob:["辰砂傀儡","星潮水母","流星兽"],         boss:"司星官·辰砂", qBonus:0, gold:2000},
+  {name:"星宿池·叁", rec:190, mob:["神辉卫队","星语祭司","银汉龙裔"],       boss:"司星官·银汉", qBonus:0, gold:2600},
+  {name:"星宿池·肆", rec:200, mob:["混沌星鲸","创世星灵","湮灭观察者"],     boss:"周天司星",   qBonus:0, gold:3400},
+  {name:"北斗·天枢", rec:210, mob:["贪狼煞卫","巨门煞卫","禄存煞卫"],       boss:"北斗守将·天枢", qBonus:0, gold:4200},
+  {name:"北斗·天璇", rec:220, mob:["文曲煞卫","廉贞煞卫","武曲煞卫"],       boss:"北斗守将·天璇", qBonus:0, gold:5000},
+  {name:"北斗·天玑", rec:230, mob:["破军煞卫","贪狼煞骑","巨门煞骑"],       boss:"北斗守将·天玑", qBonus:0, gold:6000},
+  {name:"北斗·天权", rec:240, mob:["禄存煞骑","文曲煞骑","廉贞煞将"],       boss:"北斗守将·天权", qBonus:0, gold:7200},
+  {name:"北斗·玉衡", rec:250, mob:["武曲煞将","破军煞将","贪狼魔煞"],       boss:"北斗守将·玉衡", qBonus:0, gold:8800},
+  {name:"北斗·开阳", rec:260, mob:["巨门魔煞","禄存魔煞","文曲魔煞"],       boss:"北斗守将·开阳", qBonus:0, gold:10500},
+  {name:"北斗·摇光", rec:270, mob:["廉贞魔煞","武曲魔煞","破军魔煞"],       boss:"北斗守将·摇光", qBonus:0, gold:12500},
+  {name:"北斗·周天", rec:280, mob:["周天星奴","周天星卫","周天星将"],       boss:"周天星君",   qBonus:0, gold:15000},
 ];
+/* ================= v3.0 命星系统数据表 ================= */
+const STAR_POOL_START=12, BD_START=16; // 星宿池4张(12-15) 北斗8张(16-23)
+/* 北斗七星：2攻2生2防1速（陛下定稿·破军星义=杀伐先锋占速度位） */
+const BEIDOU=[["贪狼","atk"],["武曲","atk"],["巨门","def"],["廉贞","def"],["禄存","hp"],["文曲","hp"],["破军","spd"]];
+/* 二十八星宿全名（西游记正神版·陛下拍板留全名）：四象倾向 青龙攻/玄武防/白虎暴/朱雀速 */
+const XIU28=[
+  ["青龙","角木蛟","atk"],["青龙","亢金龙","atk"],["青龙","氐土貉","atk"],["青龙","房日兔","atk"],["青龙","心月狐","atk"],["青龙","尾火虎","atk"],["青龙","箕水豹","atk"],
+  ["玄武","斗木獬","def"],["玄武","牛金牛","def"],["玄武","女土蝠","def"],["玄武","虚日鼠","def"],["玄武","危月燕","def"],["玄武","室火猪","def"],["玄武","壁水貐","def"],
+  ["白虎","奎木狼","crit"],["白虎","娄金狗","crit"],["白虎","胃土雉","crit"],["白虎","昴日鸡","crit"],["白虎","毕月乌","crit"],["白虎","觜火猴","crit"],["白虎","参水猿","crit"],
+  ["朱雀","井木犴","spd"],["朱雀","鬼金羊","spd"],["朱雀","柳土獐","spd"],["朱雀","星日马","spd"],["朱雀","张月鹿","spd"],["朱雀","翼火蛇","spd"],["朱雀","轸水蚓","spd"]];
+const XIANG_INFO={"青龙":"东·青龙","玄武":"北·玄武","白虎":"西·白虎","朱雀":"南·朱雀"};
+const STAR_PRE=["","流光","璀璨","稀世","绝世","无双","神纹","圣辉","太古","至尊"]; // 星宿前缀（陛下例：稀世/绝世/至尊）
+const STAR_STAT_TXT={atk:"攻击力",def:"防御力",hp:"生命值",crit:"暴击率",spd:"速度"};
+/* 天书：第15格新道具（陛下提案）·6本任选1上阵·仙品起步5档·北斗叁以上掉落 */
+const TIANSHU=[
+  {n:"苍龙万象图",eff:"shield", d:"开局获得护盾，护盾值=生命上限×{v}%，受到攻击优先扣除护盾",vals:[50,65,80,100,125]},
+  {n:"金帝焚焰录",eff:"atkUp",  d:"开战金帝威压：攻击+{v}%，持续3回合",vals:[20,30,40,55,70]},
+  {n:"玄冥镇岳经",eff:"stun",   d:"开战麻痹怪物2回合，麻痹期间怪物受伤+{v}%",vals:[20,30,40,55,70]},
+  {n:"周天引雷书",eff:"thunder",d:"周天雷音：每3回合引落天雷，造成{v}%攻击伤害",vals:[120,160,200,260,330]},
+  {n:"太阿诛邪卷",eff:"execute",d:"开战斩杀：对怪物造成其最大生命{v}%的真实伤害",vals:[15,18,22,27,33]},
+  {n:"菩提还神谱",eff:"killHeal",d:"菩提甘露：击杀怪物后回复{v}%生命",vals:[15,20,25,32,40]}];
+/* 星宿池品质硬分段（陛下定稿：壹灰绿蓝/贰紫橙红/叁神圣/肆混创）+北斗滑动窗口 */
+const POOL_Q=[[.35,.70,1],[.40,.80,1],[.65,1],[.80,1]], POOL_QBASE=[0,3,6,8];
+const BD_WIN=[[0,[.40,.75,1]],[1,[.40,.75,1]],[2,[.40,.75,1]],[3,[.40,.75,1]],[4,[.45,.80,1]],[5,[.40,.80,1]],[6,[.45,.80,1]],[8,[.80,1]]];
+const BOOK_Q=[null,null,[5],[5,6],[6],[6,7],[7,8],[8,9]]; // 北斗图→天书品质（壹贰不掉书）
+function rollPoolQ(pi){const r=Math.random(),t=POOL_Q[pi];for(let j=0;j<t.length;j++){if(r<t[j])return POOL_QBASE[pi]+j;}return POOL_QBASE[pi]+t.length-1;}
+function rollBDQ(bi){const t=BD_WIN[bi][1];for(let j=0;j<t.length;j++){if(Math.random()<t[j])return BD_WIN[bi][0]+j;}return BD_WIN[bi][0]+t.length-1;}
+function starName(it){ // 全名+前缀（高品质前缀·名字，凡品裸名）
+  const base=it.kind==="bd"?BEIDOU[it.idx][0]:it.kind==="book"?TIANSHU[it.idx].n:XIU28[it.idx][1];
+  return STAR_PRE[it.q]?STAR_PRE[it.q]+"·"+base:base;
+}
+function pushStarItem(kind,idx,q){ // 星宿/天书入袋：主属性踩装备词条底数
+  const lvl=S.lv, coe=kind==="bd"?1.2:kind==="book"?1:0.8;
+  const [lo,hi]=QRANGE[q];
+  const stat=kind==="bd"?BEIDOU[idx][1]:kind==="book"?null:XIU28[idx][2];
+  const base=stat==="crit"||stat==="spd"?10:8;
+  const v=Math.round(base*(lo+Math.random()*(hi-lo))*(1+lvl*0.008)*coe);
+  S.starBag.push({kind,idx,q,lvl,v,stat}); // stat 必须入档：calcStats 乘区依赖
+}
+function starSellPrice(it){return Math.round(QATK[it.q][0]*QPOW[it.q]*(it.kind==="book"?0.15:0.05))+it.lvl;}
+/* ================= v3.1 强化精炼系统（第三循环·陛下定稿） =================
+   强化：+1~+10 必成每级+2%（体验期·慢慢提）；+11~+15 递减（75→20%）每级+6%（赌狗期·金币暴涨）；失败掉1级（+10天然安全网，掉不到底）
+   精炼：+15满后开启，5阶每阶+10%，消耗周天星砂（星宿池肆/北斗深层BOSS专属）——精炼必成纯资源墙
+   适用：装备9件+北斗七星+28宿+天书（一套逻辑，强化加成=该件所有数值产出×(1+enh)） */
+const ENH_RATE=[1,1,1,1,1,1,1,1,1,1,.75,.60,.45,.30,.20]; // 索引=当前等级e：升到 +e+1 的成功率（陛下调参：拉低更刺激）
+function enhBonus(it){const e=it.enh||0;return e<=10?e*0.02:0.2+(e-10)*0.06;}
+function enhMul(it){return (1+enhBonus(it))*(1+refBonus(it));} // 强化×精炼全乘数：该件所有数值产出的放大率
+function bookVal(bk){return Math.round(TIANSHU[bk.idx].vals[bk.q-5]*enhMul(bk));} // 天书效果值（含强化精炼）
+function enhanceCost(it){const e=it.enh||0;return {gold:800*(1+e)*(1+it.q), marrow:1+Math.floor((e+1)/3)};} // 金币暴涨版：创世+14单次12万·满强化约192万/件（陛下定）
+function refBonus(it){return (it.ref||0)*0.10;}
+function refineCost(it){const r=it.ref||0;return {gold:800000*(r+1), dust:r+1};} // 精炼5阶共1200万/件
+function itName(it){return it.kind?starName(it):it.name;}
 const PITY_PURPLE=i=>40*(1+i), PITY_ORANGE=i=>150*(1+i); // 保底阈值随副本放大（时间感知）
 /* ================= 状态 ================= */
 let S;
@@ -330,7 +417,12 @@ function newGame(){
      pityP:{},       // 紫保底计数（每副本）
      pityO:{},       // 橙保底计数（每副本）
      bossKilled:{},  // BOSS首杀记录
-     bossCd:0};
+     bossCd:0,
+     /* v3.0 命星系统 */
+     starOn:{bd:[null,null,null,null,null,null,null], xiu:[null,null,null,null,null,null,null], book:null}, // 北斗7主星位+出战7宿位+天书槽
+     starBag:[],     // 星宿/天书背包（未上阵）
+     starUnlock:{pool:0, bd:0}, // 已解锁张数：星宿池(深渊25层起步) / 北斗(创世回廊通关起步)
+     marrow:0, stardust:0}; // v3.1 强化材料：星髓 / 精炼材料：周天星砂
   SLOTS.forEach(s=>S.equip[s]=null);
 }
 const R=n=>Math.floor(Math.random()*n);
@@ -347,11 +439,12 @@ function calcStats(){
           berserk:false,devour:0,thunder:0,freeze:0,immortal:0,guard:false};
   for(const s of SLOTS){
     const it=S.equip[s]; if(!it) continue;
-    if(it.base.atk)st.atk+=it.base.atk;
-    if(it.base.def)st.def+=it.base.def;
-    if(it.base.hp)st.hp+=it.base.hp;
-    if(it.base.spd)st.spd+=it.base.spd;
-    for(const a of it.affixes)applyAffix(a,st);
+    const em=enhMul(it); // v3.1 强化乘数：base与词条同步放大
+    if(it.base.atk)st.atk+=it.base.atk*em;
+    if(it.base.def)st.def+=it.base.def*em;
+    if(it.base.hp)st.hp+=it.base.hp*em;
+    if(it.base.spd)st.spd+=it.base.spd*em;
+    for(const a of it.affixes)applyAffix({v:Math.round(a.v*em),txt:a.txt,tier:a.tier},st);
   }
   // 套装石刻印统计（v2.1b）：同石≥2件触发2件套，≥4件触发4件套
   const stoneCnt={};
@@ -367,6 +460,16 @@ function calcStats(){
   st.atk=Math.round(st.atk*(1+st.atkPct/100));
   st.def=Math.round(st.def*(1+st.defPct/100));
   st.hp=Math.round(st.hp*(1+st.hpPct/100));
+  /* ===== v3.0 星宿独立乘区（不吃装备150%cap）：主星逐星独立乘、宿按象加总单次乘 ===== */
+  let bdAtk=1,bdDef=1,bdHp=1,bdSpd=0;
+  for(const s2 of S.starOn.bd){if(!s2)continue;const mm=1+(s2.v/100)*enhMul(s2), sst=s2.stat||BEIDOU[s2.idx][1]; // stat 兜底：兼容早期掉落档；强化乘数接入
+    if(sst==="atk")bdAtk*=mm; else if(sst==="def")bdDef*=mm; else if(sst==="hp")bdHp*=mm; else bdSpd+=s2.v*enhMul(s2);}
+  const xSum={atk:0,def:0,hp:0,crit:0,spd:0};
+  for(const x of S.starOn.xiu){if(!x)continue;xSum[x.stat||XIU28[x.idx][2]]+=x.v*enhMul(x);}
+  bdAtk*=1+xSum.atk/100; bdDef*=1+xSum.def/100; bdHp*=1+xSum.hp/100;
+  st.atk=Math.round(st.atk*bdAtk); st.def=Math.round(st.def*bdDef); st.hp=Math.round(st.hp*bdHp);
+  st.spd+=bdSpd+xSum.spd; st.crit=clamp(st.crit+xSum.crit,0,85);
+  st.starMul={atk:bdAtk,def:bdDef,hp:bdHp}; // 展示用
   st.crit=clamp(st.crit+st.critAdd,0,85);
   st.critD=clamp(st.critD,100,400);
   st.dmgUp=clamp(st.dmgUp,0,200);
@@ -418,6 +521,20 @@ function rollQuality(bonus=0,cap=5){
   return Math.min(res,cap); // 品质封顶随副本走：低副本roll不出顶级货
 }
 const dgCap=i=>Math.min(9,Math.max(2,(ANCHOR_Q[i]??9)+1)); // 十档封顶：0-1玄 2-3地 4-5天 6-7仙神 8-10圣 11创世
+/* 创世回廊专用掉落表（B方案·陛下定稿）：低品全砍仙品起步——仙25%/神20%/圣15%/混沌5%/创世1%
+   小怪总掉率66%（其余34%空档，替代普通图35%掉率），垃圾归零；BOSS必掉=段内归一化；幸运符吃生效 */
+const CS_TABLE=[0.01,0.06,0.21,0.41,0.66]; // 创世/混沌/圣/神/仙 累积边界（绝对概率）
+function rollChuangshi(boss){
+  const boost=S.buffDrop>0?1.2:1;
+  const r=Math.random();
+  if(!boss&&r>=CS_TABLE[4]*boost)return null;
+  const x=boss?r*CS_TABLE[4]:r;
+  if(x<CS_TABLE[0])return 9;
+  if(x<CS_TABLE[1])return 8;
+  if(x<CS_TABLE[2])return 7;
+  if(x<CS_TABLE[3])return 6;
+  return 5;
+}
 function rollAffix(q,lvl,used){
   used=used||new Set();
   let tr=Math.random()*100,tier=0,acc=0;
@@ -460,16 +577,18 @@ function genItem(slot,q,lvl){
   return it;
 }
 function itemScore(it){
-  let s=(it.base.atk||0)+(it.base.def||0)*3+(it.base.hp||0)/6+(it.base.spd||0)*3;
+  const em=enhMul(it); // v3.1 评分含强化
+  let s=((it.base.atk||0)+(it.base.def||0)*3+(it.base.hp||0)/6+(it.base.spd||0)*3)*em;
   for(const a of it.affixes){
     const pctLike=!a.txt.includes("速度")&&!a.txt.includes("生命回复");
-    s+=a.v*(a.tier+1)*(pctLike?4:1);
+    s+=a.v*(a.tier+1)*(pctLike?4:1)*em;
   }
   return s;
 }
 /* ================= 副本（怪物锚定"穿当前主流品质的预期玩家"） ================= */
-const ANCHOR_Q=[-1,1,2,3,4,5,5,6,6,7,8,9]; // 十档制：每副本锚定的玩家装备品质（-1=裸装），神品自天穹起、创世锁终局
-function dgK(i){return 1+i*0.135;}          // 难度系数：1.0 → 2.49
+const ANCHOR_Q=[-1,1,2,3,4,5,5,6,6,7,8,9, 9,9,9,9, 9,9,9,9,9,9,9,9]; // 星宿线12张全锚创世玩家（陛下要求：难度超副本12）
+const STAR_K=[2.8,3.4,4.1,4.9, 4.4,5.1,5.9,6.8,7.8,9.0,10.3,11.8];   // 星宿池4+北斗8 难度系数（>副本12的2.49，越上越难）
+function dgK(i){return i<12?1+i*0.135:STAR_K[i-12];}                  // 装备线：1.0→2.49 / 星宿线：2.8→11.8
 function expectedPlayer(L,q){
   const b={hp:80+L*22,atk:8+L*5,def:3+L*3};
   if(q<0)return{hp:Math.round(b.hp*1.2),atk:Math.round(b.atk*1.2),def:Math.round(b.def*1.2)};
@@ -485,7 +604,7 @@ function mobStat(i){
     hp:Math.round(e.atk*2.2*k),
     atk:Math.round(e.hp*0.05*Math.sqrt(k)),
     def:Math.round(e.atk*0.35),
-    spd:4+L*0.5};
+    spd:i<12?4+L*0.5:Math.round(4+L*0.35)}; // 星宿图怪速放缓：毕业玩家速度系不被碾压（破军/朱雀宿仍有价值）
 }
 function bossStat(i){
   const m=mobStat(i);
@@ -493,8 +612,17 @@ function bossStat(i){
     hp:Math.round(m.hp*5), atk:Math.round(m.atk*1.5), def:Math.round(m.def*1.5), spd:m.spd+2, boss:true};
 }
 /* ================= 战斗核心 ================= */
-let fight=null; // {mob, rounds, frozen, guardUsed}
+let fight=null; // {mob, rounds, frozen, guardUsed, shield, stun, stunDmg, bookAtk}
 let timer=null;
+/* v3.0 天书开局技：fight 创建后统一调用 */
+function bookOnStart(){
+  const bk=S.starOn&&S.starOn.book;if(!bk)return;
+  const t=TIANSHU[bk.idx], v=bookVal(bk), m=fight.mob; // v3.1 天书效果值含强化精炼
+  if(t.eff==="shield"){fight.shield=Math.round(calcStats().hp*v/100);blog(`【${t.n}】展开护盾 <span class="heal">${fight.shield}</span> 点！`,"sys");}
+  else if(t.eff==="atkUp"){fight.bookAtk={v,rounds:3};blog(`【${t.n}】金帝威压：攻击+${v}%（3回合）`,"sys");}
+  else if(t.eff==="stun"){fight.stun=2;fight.stunDmg=v;blog(`【${t.n}】玄冥镇岳：${m.name} 被麻痹 2 回合！`,"sys");}
+  else if(t.eff==="execute"){const d=Math.max(1,Math.round(m.hp*v/100));m.hp=Math.max(1,m.hp-d);blog(`【${t.n}】太阿出鞘：斩出 <span class="crit">${d}</span> 点真实伤害！`,"sys");}
+}
 function blog(msg,cls){S.log.push(`<p class="${cls||''}">${msg}</p>`);if(S.log.length>250)S.log.shift();renderLog();}
 function effHit(st){const m=fight.mob;return clamp(88+(st.spd-m.spd)*0.4+st.hitAdd,60,99);}
 function effDodge(st){const m=fight.mob;return clamp(6+(st.spd-m.spd)*0.4+st.dodgeAdd,0,45);}
@@ -504,8 +632,10 @@ function hitMob(st){
   let crit=Math.random()<st.crit/100;
   let atk=st.atk;
   if(st.berserk&&S.hp<st.hp*0.3)atk=Math.round(atk*1.5);
+  if(fight.bookAtk)atk=Math.round(atk*(1+fight.bookAtk.v/100)); // 天书·金帝焚焰录
   let d=Math.max(Math.round(atk*0.15),Math.round(atk-Math.max(0,m.def*(1-st.ignoreDef/100))*0.5));
   d=Math.round(d*(1+st.dmgUp/100));
+  if(fight.stun>0)d=Math.round(d*(1+fight.stunDmg/100)); // 天书·玄冥镇岳：麻痹期受伤加深
   if(crit)d=Math.round(d*st.critD/100);
   if(m.boss&&st.bossUp)d=Math.round(d*(1+st.bossUp/100));
   m.hp=Math.max(0,m.hp-d);
@@ -523,11 +653,17 @@ function hitMob(st){
 function hitHero(st){
   const m=fight.mob;
   if(fight.frozen>0){fight.frozen--;blog(`<span class="enemy">${m.name}</span> 被冻结，无法行动！`,"sys");return;}
+  if(fight.stun>0){fight.stun--;blog(`<span class="enemy">${m.name}</span> 麻痹中，无法行动！`,"sys");return;} // 天书·玄冥镇岳
   if(Math.random()<effDodge(st)/100){blog(`你闪避了 <span class="enemy">${m.name}</span> 的攻击！`,"sys");return;}
   // 百分比减伤制：封顶75%，防御永不把伤害碾到0
   const C=500+DUNGEONS[S.dg].rec*8;
   const red=Math.min(0.75,st.def/(st.def+C));
   let d=Math.max(1,Math.round(m.atk*(1-red)));
+  if(fight.shield>0){ // 天书·苍龙万象图：护盾先扛
+    const ab=Math.min(fight.shield,d);fight.shield-=ab;d-=ab;
+    blog(`【天书护盾】抵挡 <span class="heal">${ab}</span> 点伤害${fight.shield<=0?"（护盾破碎！）":""}！`,"sys");
+    if(d<=0)return;
+  }
   if(fight.guardUsed===false&&st.guard&&S.hp-d<=0){d=Math.max(0,S.hp-1);fight.guardUsed=true;blog("【护体】宝光炸裂，致命一击只伤你分毫！","sys");}
   if(st.immortal>0&&S.hp-d<=0&&Math.random()*100<st.immortal){d=Math.max(0,S.hp-1);blog("【不灭】道韵护身，你免死了这一击！","sys");}
   S.hp=Math.max(0,S.hp-d);
@@ -540,6 +676,14 @@ function fightRound(){
   fight.rounds++;
   hitMob(st);
   if(fight.mob.hp>0&&S.hp>0)hitHero(st);
+  // 天书·周天引雷书：每3回合引落天雷
+  if(fight&&fight.mob.hp>0&&S.hp>0&&fight.rounds%3===0&&S.starOn&&S.starOn.book){
+    const bk=S.starOn.book,t=TIANSHU[bk.idx];
+    if(t.eff==="thunder"){const d=Math.max(1,Math.round(st.atk*bookVal(bk)/100));fight.mob.hp=Math.max(0,fight.mob.hp-d);
+      blog(`【周天引雷书】天雷轰落！<span class="crit">${d}</span> 点伤害！`);}
+  }
+  if(fight&&fight.bookAtk&&--fight.bookAtk.rounds<=0){fight.bookAtk=null;blog("【金帝焚焰录】威压散去","sys");}
+  if(!fight)return;
   S.hp=Math.min(st.hp,S.hp+st.hpRegen);
   renderHp(st);
   if(fight.mob.hp<=0){winFight(st);return;}
@@ -549,6 +693,9 @@ function fightRound(){
 function winFight(st){
   const m=fight.mob, dg=DUNGEONS[S.dg], isBoss=!!m.boss;
   fight=null;
+  // 天书·菩提还神谱：击杀回血（全战斗线通用）
+  if(S.starOn&&S.starOn.book){const bk=S.starOn.book,t=TIANSHU[bk.idx];
+    if(t.eff==="killHeal"){const h=Math.round(st.hp*bookVal(bk)/100);S.hp=Math.min(st.hp,S.hp+h);blog(`【菩提还神谱】甘露回春，恢复 <span class="heal">${h}</span> 点生命`,"sys");}}
   if(S.abF&&S.abF.active){abyssWin();return;}
   S.kills++;
   if(st.devour>0)S.hp=Math.min(st.hp,S.hp+Math.round(st.hp*st.devour/100));
@@ -558,6 +705,7 @@ function winFight(st){
   const goldGain=Math.round(RR(dg.gold,dg.gold*2)*(isBoss?4:1)*(1+(st.goldUp+(S.pet?petGoldUp():0))/100)); // 灵宠金币加成
   S.gold+=goldGain;
   blog(`—— 胜利！经验+${xpGain} 金币+${goldGain} ——`,"sys");
+  if(S.dg>=12){starWin(isBoss);return;} // v3.0 星宿线：走专属掉落与推进
   if(isBoss){
     const firstKill=!S.bossKilled[S.dg];
     S.bossKilled[S.dg]=true;
@@ -566,7 +714,7 @@ function winFight(st){
       S.gold+=bonus;
       toast(`首杀大奖：+${bonus} 金币！`);
     }
-    const q=firstKill?Math.min(3,Math.max(2,2+dg.qBonus+R(2))):Math.max(rollQuality(Math.min(4,dg.qBonus+1),dgCap(S.dg)),Math.max(0,dgCap(S.dg)-4));
+    const q=S.dg===11?rollChuangshi(true):(firstKill?Math.min(3,Math.max(2,2+dg.qBonus+R(2))):Math.max(rollQuality(Math.min(4,dg.qBonus+1),dgCap(S.dg)),Math.max(0,dgCap(S.dg)-4)));
     const it=genItem(SLOTS[R(9)],q,DUNGEONS[S.dg].rec+3);
     S.bag.push(it);
     if(Math.random()<0.3){const n=1+R(2);S.stones+=n;blog(`BOSS额外掉落【重铸石】×${n}`,"sys");}
@@ -576,19 +724,22 @@ function winFight(st){
     blog(`—— BOSS掉落${firstKill?'（首杀奖励！金币大奖已发放）':''}：<span class="${QCOLOR[it.q]}">${it.name}（${QNAMES[it.q]}）</span>`,"sys");
     if(it.q>=8)toast(`🌌 ${QNAMES[it.q]}出世：${it.name}！`);
     else if(it.q>=4)toast(`获得${QNAMES[it.q]}装备：${it.name}`);
-    if(S.dg===S.unlocked-1&&S.unlocked<DUNGEONS.length){
+    if(S.dg<12&&S.dg===S.unlocked-1&&S.unlocked<12){
       S.unlocked++;
       blog(`—— 通关【${dg.name}】！新副本【${DUNGEONS[S.unlocked-1].name}】已解锁！`,"sys");
       toast(`解锁新副本：${DUNGEONS[S.unlocked-1].name}`);
-    }else if(S.dg===S.unlocked-1){
-      blog(`—— 你击败了最终 BOSS，已通关全部副本！`,"sys");
+    }else if(S.dg===11&&firstKill){
+      blog(`—— 你击败了创世守门人，装备副本全通！【北斗副本】已开启——星宿副本页见！`,"sys");
+      toast("装备副本全通：北斗副本开启！");
     }
     stopFarm();
   }else{
     S.pityP[S.dg]=(S.pityP[S.dg]||0)+1;
     S.pityO[S.dg]=(S.pityO[S.dg]||0)+1;
     let dropQ=null,tag="";
-    if(S.pityO[S.dg]>=PITY_ORANGE(S.dg)){ // 橙轨保底：给该副本封顶品质+金币补贴（低副本长期挂=金币可观）
+    if(S.dg===11){ // 创世回廊：B方案专用表，仙品起步垃圾归零（保底轨道不适用毕业图）
+      dropQ=rollChuangshi(false);
+    }else if(S.pityO[S.dg]>=PITY_ORANGE(S.dg)){ // 橙轨保底：给该副本封顶品质+金币补贴（低副本长期挂=金币可观）
       dropQ=dgCap(S.dg); S.pityO[S.dg]=0; S.pityP[S.dg]=0;
       const subsidy=dg.gold*20;
       S.gold+=subsidy;
@@ -617,6 +768,82 @@ function winFight(st){
     const d=PETS[0];
     blog(`<span class="pet">【${d.name}】${d.quips[R(d.quips.length)]}</span>`);
   }
+  renderAll();autosave();
+}
+/* ================= v3.0 星宿线：掉落与推进 ================= */
+function starUnlocked(i){return i<16?(S.starUnlock.pool||0)>i-12:(S.starUnlock.bd||0)>i-16;}
+function checkStarUnlock(){ // 静态条件自动解锁（load/深渊里程碑后调用）
+  if((S.abyssBest||0)>=25&&!(S.starUnlock.pool>0)){
+    S.starUnlock.pool=1;
+    blog("—— 深渊25层达成！【星宿池】开启：专爆二十八星宿（星宿副本页）——","sys");
+    toast("星宿池开启！");
+  }
+  if(S.unlocked>=12&&!(S.starUnlock.bd>0)){
+    S.starUnlock.bd=1;
+    blog("—— 装备副本全通！【北斗副本】开启：专爆北斗七星与天书（星宿副本页）——","sys");
+    toast("北斗副本开启！");
+  }
+}
+function starMobWin(){ // 星宿图小怪：星宿大随机混掉+杂项
+  const i=S.dg;
+  if(i<16){ // 星宿池：28宿混合大随机
+    if(Math.random()<0.22){pushStarItem("x28",R(28),rollPoolQ(i-12));}
+  }else{ // 北斗：7星混合大随机+叁以上天书
+    if(Math.random()<0.22){pushStarItem("bd",R(7),rollBDQ(i-16));}
+    const bqi=BOOK_Q[i-16];
+    if(bqi&&Math.random()<0.03){pushStarItem("book",R(6),bqi[R(bqi.length)]);}
+  }
+  if(Math.random()<0.15){S.pot++;blog("拾获【治疗药水】×1","sys");}
+  if(Math.random()<0.03){S.stones++;blog("拾获【重铸石】×1","sys");}
+  if(Math.random()<0.08){S.marrow=(S.marrow||0)+1;blog("拾获【星髓】×1","sys");} // v3.1 强化材料
+  if(!S.stoneInv)S.stoneInv={};
+  const stn=stoneDropType(i);
+  if(Math.random()<0.04){S.stoneInv[stn]=(S.stoneInv[stn]||0)+1;blog(`拾获【${stn}·套装石】×1`,"sys");}
+}
+function starBossWin(){ // 星宿图BOSS：首杀大奖+必掉星宿/天书+逐图推进
+  const i=S.dg, dg=DUNGEONS[i];
+  const firstKill=!S.bossKilled[i];
+  S.bossKilled[i]=true;
+  if(firstKill){
+    const bonus=dg.gold*30;
+    S.gold+=bonus;
+    toast(`首杀大奖：+${bonus} 金币！`);
+  }else{
+    blog(`—— 此副本已首杀过（重复挑战只掉落、不再推进下一图）——`,"sys");
+    toast("已首杀副本：重复挑战不再推进");
+  }
+  if(i<16){
+    pushStarItem("x28",R(28),rollPoolQ(i-12));
+    blog(`—— ${dg.boss} 献上一枚星宿！——`,"sys");
+  }else{
+    pushStarItem("bd",R(7),rollBDQ(i-16));
+    const bqi=BOOK_Q[i-16];
+    if(bqi){pushStarItem("book",R(6),bqi[R(bqi.length)]);blog(`—— ${dg.boss} 献上星辰与天书！——`,"sys");}
+    else blog(`—— ${dg.boss} 献上星辰！——`,"sys");
+  }
+  if(Math.random()<0.3){const n=1+R(2);S.stones+=n;blog(`BOSS额外掉落【重铸石】×${n}`,"sys");}
+  S.marrow=(S.marrow||0)+3;blog(`BOSS掉落【星髓】×3`,"sys"); // v3.1 强化材料
+  if(i===15||i>=19){S.stardust=(S.stardust||0)+2;blog(`BOSS掉落【周天星砂】×2`,"sys");} // 星宿池肆+北斗天权以上：精炼材料
+  else if(i>=18&&Math.random()<0.2){S.stardust=(S.stardust||0)+1;blog(`BOSS掉落【周天星砂】×1`,"sys");} // 北斗叁~柒：小概率
+  if(!S.stoneInv)S.stoneInv={};
+  S.stoneInv[stoneDropType(i)]=(S.stoneInv[stoneDropType(i)]||0)+2;
+  if(firstKill){ // 逐图首杀解锁下一张
+    if(i<15&&S.starUnlock.pool===i-11){S.starUnlock.pool++;
+      blog(`—— 通关【${dg.name}】！【${DUNGEONS[i+1].name}】已解锁！——`,"sys");toast("解锁："+DUNGEONS[i+1].name);}
+    else if(i>=16&&i<23&&S.starUnlock.bd===i-15){S.starUnlock.bd++;
+      blog(`—— 通关【${dg.name}】！【${DUNGEONS[i+1].name}】已解锁！——`,"sys");toast("解锁："+DUNGEONS[i+1].name);}
+    else if(i===15){blog("—— 星宿池全通！收集大成，北斗副本恭候——","sys");toast("星宿池全通！");}
+    else if(i===23){blog("—— 周天星君陨落！北斗八图全通，命星大道圆满！——","sys");toast("北斗副本全通！");}
+  }
+  checkTitles();
+}
+function starWin(isBoss){
+  if(isBoss)starBossWin(); else starMobWin();
+  if(S.pet&&Math.random()<0.2){
+    const d=PETS[0];
+    blog(`<span class="pet">【${d.name}】${d.quips[R(d.quips.length)]}</span>`);
+  }
+  checkStarUnlock();
   renderAll();autosave();
 }
 function loseFight(){
@@ -659,6 +886,7 @@ function tick(){
     }
     fight={mob:mobStat(S.dg),rounds:0,frozen:0,guardUsed:false};
     blog(`—— 遭遇 <b class="enemy">${fight.mob.name}</b>（Lv.${fight.mob.lv}）——`);
+    bookOnStart();
   }
   fightRound();
   updateFarmStat();
@@ -672,7 +900,7 @@ function stopFarm(){
 }
 /* ================= 无尽深渊（v2.1 硬核爬塔） ================= */
 function abyssMob(floor){
-  const base=bossStat(DUNGEONS.length-1); // 以创世BOSS为基准
+  const base=bossStat(11); // 以创世BOSS为基准（v3.0扩容后钉死index11）
   const k=Math.pow(1.18,floor-1)*0.4;     // 首层=创世BOSS的40%（刚毕业可爬），每层+18%（硬核递进）
   return {name:"深渊·第"+floor+"层 守关者",lv:160+floor,
     hp:Math.round(base.hp*k), atk:Math.round(base.atk*Math.pow(1.06,floor-1)),
@@ -680,7 +908,7 @@ function abyssMob(floor){
     boss:true};
 }
 function enterAbyss(){
-  if(S.unlocked<DUNGEONS.length){toast("通关创世回廊后解锁无尽深渊");return;}
+  if(S.unlocked<12){toast("通关创世回廊后解锁无尽深渊");return;}
   if(S.stam<8){toast("体力不足（需8点）");return;}
   if(S.abF&&S.abF.active){toast("已在深渊之中");return;}
   S.stam-=8;
@@ -699,6 +927,7 @@ function startAbyssBattle(){
   S.hp=Math.min(S.hp,st0.hp);
   fight={mob:abyssMob(floor),rounds:0,frozen:0,guardUsed:false};
   blog(`—— 深渊 第${floor}层 —— <b class="enemy">${fight.mob.name}</b>`,"sys");
+  bookOnStart();
   document.getElementById('hpWrap').style.display='';
   document.getElementById('farmTitle').textContent="无尽深渊 · 第"+floor+"层";
   const bt=setInterval(()=>{if(!fight){clearInterval(bt);return;}fightRound();},900);
@@ -718,7 +947,7 @@ function abyssWin(){
   if(floor%5===0){const bonus=4000*(floor/5);S.gold+=bonus;S.stones+=2;const vGain=Math.floor(floor/5)*2;S.vouchers=(S.vouchers||0)+vGain;S.stoneInv[SET_STONES[R(4)].n]=(S.stoneInv[SET_STONES[R(4)].n]||0)+3;
     blog(`—— 深渊里程碑！第${floor}层达成，+${bonus}金币 ——`,"sys");toast("深渊里程碑：第"+floor+"层！");}
   if(floor>(S.abyssBest||0))S.abyssBest=floor;
-  checkPet();checkTitles();if(S.cosmetics&&S.cosmetics.theme)applyTheme(S.cosmetics.theme);checkTitles();
+  checkPet();checkTitles();checkStarUnlock();if(S.cosmetics&&S.cosmetics.theme)applyTheme(S.cosmetics.theme);checkTitles();
   S.abF.floor++;
   renderAll();autosave();
   setTimeout(startAbyssBattle,700);
@@ -749,6 +978,7 @@ function challengeBoss(){
   S.hp=st.hp;
   fight={mob:bossStat(S.dg),rounds:0,frozen:0,guardUsed:false};
   blog(`—— BOSS 战！【${DUNGEONS[S.dg].name}】—— <b class="enemy">${fight.mob.name}</b>（Lv.${fight.mob.lv}）`,"sys");
+  bookOnStart();
   document.getElementById('hpWrap').style.display='';
   const bt=setInterval(()=>{
     if(!fight){clearInterval(bt);document.getElementById('hpWrap').style.display='none';return;}
@@ -763,12 +993,15 @@ function renderHp(st){
 }
 function updateFarmStat(){
   if(S.abF&&S.abF.active){$("farmStat").textContent=`深渊连战中 · 当前 第${S.abF.floor}层 · 最高 第${S.abyssBest||0}层 · 药水${S.pot}`;return;}
+  if(S.dg>=12){ // 星宿线：无保底轨道，显示收集数
+    $("farmStat").textContent=timer?`星宿副本刷本中：${DUNGEONS[S.dg].name} · 行囊 ${S.starBag.length} 件`:"未在刷本";
+    $("farmTitle").textContent=timer?`战斗日志 · ${DUNGEONS[S.dg].name}`:"战斗日志";return;}
   const p=S.pityP[S.dg]||0, o=S.pityO[S.dg]||0;
   $("farmStat").textContent=timer?`刷本中：${DUNGEONS[S.dg].name} · 紫保底 ${p}/${PITY_PURPLE(S.dg)} · 橙保底 ${o}/${PITY_ORANGE(S.dg)}`:"未在刷本";
   $("farmTitle").textContent=timer?`战斗日志 · ${DUNGEONS[S.dg].name}`:"战斗日志";
 }
 function renderDungeons(){
-  $("dgList").innerHTML=DUNGEONS.map((d,i)=>{
+  $("dgList").innerHTML=DUNGEONS.slice(0,12).map((d,i)=>{
     const locked=i>=S.unlocked;
     const cur=i===S.dg;
     const p=S.pityP[i]||0, o=S.pityO[i]||0;
@@ -784,7 +1017,7 @@ function renderDungeons(){
     </div>`;
   }).join("");
   const abActive=S.abF&&S.abF.active;
-  const abLocked=S.unlocked<DUNGEONS.length;
+  const abLocked=S.unlocked<12;
   $("dgList").innerHTML+=`<div class="dg ${abLocked?'lock':''} ${abActive?'current':''}" style="${S.abF&&S.abF.active?'border-color:var(--gold);':''}">
     <div class="head"><b>🌀 无尽深渊</b><span class="cmp">硬核爬塔 · 连战至倒下 · 失败退5层</span></div>
     <div class="row" style="justify-content:space-between;margin-top:4px;">
@@ -792,6 +1025,273 @@ function renderDungeons(){
       ${abLocked?'<span class="cmp">[通关创世回廊解锁]</span>':`<button class="primary" onclick="enterAbyss()" ${abActive?'disabled':''}>${abActive?'深渊进行中':'进入深渊（8体力）'}</button>`}
     </div></div>`;
 }
+/* ================= v3.0 星宿渲染 ================= */
+const POOL_SEG_TXT=["掉落：凡/灵/玄 · 28宿大随机","掉落：地/天/仙 · 28宿大随机","掉落：神/圣 · 28宿大随机","掉落：混沌/创世 · 28宿大随机"];
+const BD_SEG_TXT=["品质窗：凡灵玄","品质窗：灵玄地","品质窗：玄地天","品质窗：地天仙","品质窗：天仙神","品质窗：仙神圣","品质窗：神圣混","品质窗：混沌创世"];
+function renderStarMaps(){
+  const bdCards=[],poolCards=[];
+  for(let i=12;i<24;i++){
+    const d=DUNGEONS[i],un=starUnlocked(i),cur=S.dg===i;
+    const seg=i<16?POOL_SEG_TXT[i-12]:BD_SEG_TXT[i-16]+(i-16>=2?" · 天书掉落":"");
+    const lockHint=i<16?(i===12?"[深渊25层解锁]":"[星宿池逐图推进解锁]"):(i===16?"[通关创世回廊解锁]":"[北斗逐图推进解锁]");
+    const card=`<div class="dg ${un?'':'lock'} ${cur?'current':''}">
+      <div class="head"><b>${un?'':'[锁] '}${d.name}</b><span class="cmp">推荐 Lv.${d.rec}</span></div>
+      <div class="row" style="justify-content:space-between; margin-top:4px;">
+        <span class="pity">${seg}${S.bossKilled[i]?` <span class="badge">已首杀</span>`:""}</span>
+        ${un?`<button class="${cur?'':'primary'}" onclick="selectStarDg(${i})">${cur?'当前副本':'前往'}</button>`:lockHint}
+      </div></div>`;
+    (i<16?poolCards:bdCards).push(card);
+  }
+  $("bdMaps").innerHTML=bdCards.join("");
+  $("poolMaps").innerHTML=poolCards.join("");
+}
+function starStatHtml(it){
+  const stat=it.kind==="bd"?BEIDOU[it.idx][1]:it.kind==="book"?null:XIU28[it.idx][2];
+  if(!stat)return TIANSHU[it.idx].d.replace("{v}",TIANSHU[it.idx].vals[it.q-5]);
+  const isPct=stat!=="spd";
+  return `${STAR_STAT_TXT[stat]} +${it.v}${isPct?"%":""}`;
+}
+const BOOK_EFF_TXT={shield:"护盾",atkUp:"攻升",stun:"麻痹",thunder:"引雷",execute:"斩杀",killHeal:"回血"};
+function renderStarSlots(){
+  let html="";
+  BEIDOU.forEach((b,idx)=>{const it=S.starOn.bd[idx];
+    html+=`<div class="slot" onclick="${it?`showStarOn('bd',${idx})`:''}"><b>${b[0]}</b>${it?`<span class="${QCOLOR[it.q]}">${starName(it)}</span><br><span class="cmp">${starStatHtml(it)}</span>`:"<span class='cmp'>主星位·空</span>"}</div>`;});
+  S.starOn.xiu.forEach((it,idx)=>{
+    html+=`<div class="slot" onclick="${it?`showStarOn('xiu',${idx})`:''}"><b>宿位${idx+1}</b>${it?`<span class="${QCOLOR[it.q]}">${starName(it)}</span><br><span class="cmp">${starStatHtml(it)}</span>`:"<span class='cmp'>空</span>"}</div>`;});
+  const bk=S.starOn.book;
+  html+=`<div class="slot" onclick="${bk?`showStarOn('book',0)`:''}"><b>天书</b>${bk?`<span class="${QCOLOR[bk.q]}">${starName(bk)}</span><br><span class="cmp">${BOOK_EFF_TXT[TIANSHU[bk.idx].eff]}</span>`:"<span class='cmp'>北斗叁以上掉落</span>"}</div>`;
+  $("starSlots").innerHTML=html;
+}
+/* 星宿详情弹窗（陛下钦定布局：左名流光·右象属·下属性·底按钮） */
+function starCardHtml(it){
+  const isBD=it.kind==="bd", isBook=it.kind==="book";
+  const xi=isBD?"":isBook?"":XIU28[it.idx][0];
+  const xiang=isBD?"北斗·主星":isBook?"天书":XIANG_INFO[xi];
+  const kindTxt=isBD?"北斗七星 · 主星位（逐星独立乘区）":isBook?"天书 · 任选一本上阵":"二十八星宿 · 出战位（同象加总乘区）";
+  return `<h2 style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+    <span class="${QCOLOR[it.q]}">${starName(it)}</span>
+    <span class="tag" style="white-space:nowrap;">${xiang}</span></h2>
+  <div class="cmp" style="margin-bottom:6px;">${kindTxt} · ${QNAMES[it.q]} · Lv.${it.lvl}</div>
+  <div class="affix" style="color:var(--ink)">◆ ${starStatHtml(it)}</div>
+  <div class="affix cmp">${isBook?"第15格·开局技生效（装备/星宿/深渊全线生效）":"星宿属性走独立乘区，不受装备词条封顶影响"}</div>`;
+}
+/* 星宿数值对比（陛下反馈补装）：主星对同名位 / 宿对同属性出战位 / 书对当前天书——同属性内比 v，一眼分高低 */
+function cmpStarHtml(it){
+  const isPct=st=>st==="atk"||st==="def"||st==="hp";
+  if(it.kind==="bd"){
+    const cur=S.starOn.bd[it.idx];
+    if(!cur)return `<span class="up">主星位虚位以待，直接上阵！</span>`;
+    const st=cur.stat||BEIDOU[it.idx][1], diff=it.v-cur.v;
+    return `对比当前【${starName(cur)}】<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff)}</span>（${STAR_STAT_TXT[st]} ${cur.v}${isPct(st)?"%":""} → ${it.v}${isPct(st)?"%":""}）`;
+  }
+  if(it.kind==="book"){
+    const cur=S.starOn.book;
+    if(!cur)return `<span class="up">天书槽虚位以待，直接上阵！</span>`;
+    if(cur.idx===it.idx){
+      const t=TIANSHU[it.idx], diff=it.q-cur.q;
+      return `对比当前【${starName(cur)}】（同书升级）：品质<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff)}档</span>（效果值 ${t.vals[cur.q-5]} → ${t.vals[it.q-5]}）`;
+    }
+    return `当前天书【${starName(cur)}】效果：${TIANSHU[cur.idx].d.replace("{v}",TIANSHU[cur.idx].vals[cur.q-5])}——六书效果互斥，择优上阵替换`;
+  }
+  const stat=XIU28[it.idx][2];
+  let best=null;
+  S.starOn.xiu.forEach(x=>{if(x&&(x.stat||XIU28[x.idx][2])===stat&&(!best||x.v>best.v))best=x;});
+  if(!best)return `<span class="up">出战位暂无${STAR_STAT_TXT[stat]}宿——上阵补位（该属性 +${it.v}${isPct(stat)?"%":""}）</span>`;
+  const diff=it.v-best.v;
+  return `对比出战位【${starName(best)}】<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff)}</span>（${STAR_STAT_TXT[stat]} ${best.v}${isPct(stat)?"%":""} → ${it.v}${isPct(stat)?"%":""}）`;
+}
+window.showStarBagItem=i=>{
+  const it=S.starBag[i];if(!it)return;
+  $("modalBox").className=it.q>=8?"box deepSpace":"box";
+  // 上阵按钮智能化：有对比对象时直接显示 ▲▼ 与替换目标
+  let btn=`<button class="primary" onclick="equipStar(${i})">上 阵</button>`;
+  if(it.kind==="bd"){
+    const cur=S.starOn.bd[it.idx];
+    if(cur){const diff=it.v-cur.v;btn=`<button class="primary" onclick="equipStar(${i})">替换【${starName(cur)}】(${diff>=0?'▲':'▼'}${Math.abs(diff)})</button>`;}
+  }else if(it.kind==="x28"){
+    if(S.starOn.xiu.every(x=>x)){
+      const stat=XIU28[it.idx][2];
+      let best=null,bs=-1;
+      S.starOn.xiu.forEach((x,si)=>{if((x.stat||XIU28[x.idx][2])===stat&&(!best||x.v>best.v)){best=x;bs=si;}});
+      if(best!==null){const diff=it.v-best.v;btn=`<button class="primary" onclick="replaceStar(${i},${bs})">替换【${starName(best)}】(${diff>=0?'▲':'▼'}${Math.abs(diff)})</button>`;}
+      else btn=`<button onclick="equipStar(${i})" disabled title="出战位已满且无同属性位">出战位已满（先卸下再上阵）</button>`;
+    }
+  }else if(S.starOn.book){
+    btn=`<button class="primary" onclick="equipStar(${i})">替换当前天书</button>`;
+  }
+  $("modalBox").innerHTML=starCardHtml(it)+`
+    <div class="cmp" style="margin:8px 0;">${cmpStarHtml(it)}</div>
+    ${btn}
+    <button class="gold" onclick="openEnhanceStarBag(${i})">强 化${it.enh?`（+${it.enh}${it.ref?`·精${it.ref}`:''}）`:''}</button>
+    <button onclick="sellStar(${i})">出 售（+${starSellPrice(it)}金币）</button>
+    <button onclick="closeModal()">关 闭</button>`;
+  $("modal").classList.remove("hidden");
+};
+window.replaceStar=(i,slot)=>{ // 满位时替换同属性出战位（旧宿回行囊）
+  const it=S.starBag[i];if(!it)return;
+  const old=S.starOn.xiu[slot];
+  if(old)S.starBag.push(old);
+  S.starOn.xiu[slot]=it;S.starBag.splice(i,1);
+  closeModal();renderAll();autosave();
+};
+window.showStarOn=(type,idx)=>{
+  const it=type==="bd"?S.starOn.bd[idx]:type==="xiu"?S.starOn.xiu[idx]:S.starOn.book;
+  if(!it)return;
+  $("modalBox").className=it.q>=8?"box deepSpace":"box";
+  $("modalBox").innerHTML=starCardHtml(it)+`
+    <button class="gold" onclick="openEnhanceStar('${type}',${idx})">强 化${it.enh?`（+${it.enh}${it.ref?`·精${it.ref}`:''}）`:''}</button>
+    <button class="danger" onclick="unequipStar('${type}',${idx})">卸 下</button>
+    <button onclick="closeModal()">关 闭</button>`;
+  $("modal").classList.remove("hidden");
+};
+window.equipStar=i=>{
+  const it=S.starBag[i];if(!it)return;
+  if(it.kind==="bd"){
+    if(S.starOn.bd[it.idx])S.starBag.push(S.starOn.bd[it.idx]); // 同名星自动替换（旧星回行囊可卖）
+    S.starOn.bd[it.idx]=it;
+  }else if(it.kind==="x28"){
+    const slot=S.starOn.xiu.findIndex(x=>!x);
+    if(slot<0){toast("出战位已满（7格）——先卸下一个星宿");return;}
+    S.starOn.xiu[slot]=it;
+  }else{
+    if(S.starOn.book)S.starBag.push(S.starOn.book);
+    S.starOn.book=it;
+  }
+  S.starBag.splice(i,1);
+  closeModal();renderAll();autosave();
+};
+window.unequipStar=(type,idx)=>{
+  if(type==="book"){if(S.starOn.book){S.starBag.push(S.starOn.book);S.starOn.book=null;}}
+  else{const arr=type==="bd"?S.starOn.bd:S.starOn.xiu;
+    if(arr[idx]){S.starBag.push(arr[idx]);arr[idx]=null;}}
+  closeModal();renderAll();autosave();
+};
+window.sellStar=i=>{
+  const it=S.starBag[i];if(!it)return;
+  const p=starSellPrice(it);
+  S.gold+=p;S.starBag.splice(i,1);
+  toast(`已出售，+${p}金币`);closeModal();renderAll();autosave();
+};
+window.selectStarDg=i=>{
+  if(!starUnlocked(i))return;
+  stopFarm();S.dg=i;
+  blog(`—— 前往【${DUNGEONS[i].name}】——`,"sys");
+  renderAll();autosave();
+  startFarm();
+};
+function openStarBook(){ // 收集册+星宿行囊
+  const owned={};
+  const collect=it=>{const k=it.kind+"-"+it.idx;if(!owned[k]||owned[k].q<it.q)owned[k]=it;};
+  S.starBag.forEach(collect);
+  S.starOn.bd.forEach(x=>{if(x)collect(x);});
+  S.starOn.xiu.forEach(x=>{if(x)collect(x);});
+  if(S.starOn.book)collect(S.starOn.book);
+  const bdRows=BEIDOU.map((b,i)=>{const o=owned["bd-"+i];
+    return `<span class="tag ${o?QCOLOR[o.q]:'cmp'}" style="margin:2px;display:inline-block;">${b[0]}${o?`·${QNAMES[o.q]}`:"·未集"}</span>`;}).join("");
+  const xiangRows=["青龙","玄武","白虎","朱雀"].map(xg=>{
+    const rows=XIU28.map((x,i)=>({x,i})).filter(o=>o.x[0]===xg).map(({x,i})=>{
+      const o=owned["x28-"+i];
+      return `<span class="tag ${o?QCOLOR[o.q]:'cmp'}" style="margin:2px;display:inline-block;">${x[1]}${o?`·${QNAMES[o.q]}`:"·未集"}</span>`;}).join("");
+    return `<div style="margin:4px 0;"><b>${XIANG_INFO[xg]}</b> ${rows}</div>`;}).join("");
+  const bookRows=TIANSHU.map((t,i)=>{const o=owned["book-"+i];
+    return `<span class="tag ${o?QCOLOR[o.q]:'cmp'}" style="margin:2px;display:inline-block;">${t.n}${o?`·${QNAMES[o.q]}`:"·未得"}</span>`;}).join("");
+  const prog=`北斗 ${BEIDOU.filter((b,i)=>owned["bd-"+i]).length}/7 · 二十八宿 ${XIU28.filter((x,i)=>owned["x28-"+i]).length}/28 · 天书 ${TIANSHU.filter((t,i)=>owned["book-"+i]).length}/6`;
+  $("modalBox").className="box";
+  $("modalBox").innerHTML=`<h2>星宿收集册</h2>
+    <div style="margin:6px 0;"><b>北斗七星（主星位）</b><br>${bdRows}</div>
+    ${xiangRows}
+    <div style="margin:6px 0;"><b>天书六卷</b><br>${bookRows}</div>
+    <div class="cmp">收集进度：${prog}</div>
+    <div style="margin:8px 0 4px;"><b>星宿行囊（${S.starBag.length} 件 · 点击操作）</b></div>
+    ${S.starBag.length?S.starBag.map((it,i)=>`<div class="item" onclick="showStarBagItem(${i})"><div class="nm ${QCOLOR[it.q]}">${starName(it)} <span class="cmp">[${it.kind==="bd"?"北斗":it.kind==="book"?"天书":XIU28[it.idx][0]}·${QNAMES[it.q]}·${starStatHtml(it)}]</span></div></div>`).join(""):"<p class='cmp'>星宿行囊空空——去星宿副本刷吧！</p>"}
+    <button onclick="closeModal()">关 闭</button>`;
+  $("modal").classList.remove("hidden");
+}
+/* ================= v3.1 强化精炼弹窗 ================= */
+window.openEnhance=(it,refresh)=>{
+  window._enhIt=it;window._enhRefresh=refresh;
+  drawEnhance(it);
+};
+window.enhanceBack=()=>{const r=window._enhRefresh;window._enhIt=null;window._enhRefresh=null;if(r)r();};
+function drawEnhance(it){
+  const e=it.enh||0, r=it.ref||0, maxed=e>=15;
+  const kind=it.kind==="book"?"天书":it.kind==="bd"?"北斗主星":it.kind==="x28"?"二十八宿":it.slot||"装备";
+  const c=enhanceCost(it), rc=refineCost(it);
+  let mid=`<div class="affix" style="color:var(--ink)">◆ 全产出 ×${enhMul(it).toFixed(2)}（强化 +${e} · 精炼 ${r}/5）</div>`;
+  if(it.kind==="book")mid+=`<div class="affix" style="color:var(--ink)">◆ 当前效果值：${bookVal(it)}（基础 ${TIANSHU[it.idx].vals[it.q-5]}）</div>`;
+  if(maxed){
+    if(r>=5)mid+=`<div class="up">强化 +15 · 精炼 5/5 —— 此件已臻圆满！</div>`;
+    else mid+=`<div class="up">强化 +15 满级！精炼之路开启</div>
+      <div class="cmp">下一阶：精炼 ${r+1}/5 → 全产出 ×${((1+enhBonus(it))*(1+(r+1)*0.10)).toFixed(2)}</div>
+      <div class="cmp">费用：金币 <b>${rc.gold}</b> · 周天星砂 ×${rc.dust}（库存 ${S.stardust||0}）</div>
+      <button class="gold" onclick="doRefine()">精 炼（+1 阶 · 必成）</button>`;
+  }else{
+    const nb=(1+enhBonus({enh:e+1}))*(1+refBonus(it));
+    mid+=`<div class="affix" style="color:var(--ink)">◆ 下一级：+${e+1} → 全产出 ×${nb.toFixed(2)}</div>
+      <div class="cmp">${e>=10?`成功率 <b class="down">${Math.round(ENH_RATE[e]*100)}%</b>——失败掉 1 级，赌狗有风险！`:`成功率 <b class="up">100%</b>（+10 之内必成）`}</div>
+      <div class="cmp">费用：金币 <b>${c.gold}</b> · 星髓 ×${c.marrow}（库存 ${S.marrow||0}）</div>
+      <button class="primary" onclick="doEnhance()">强 化（+1）</button>
+      ${e<10?`<button onclick="enhanceTo10()">一键强化到 +10（必成段）</button>`:""}`;
+  }
+  $("modalBox").className=it.q>=8?"box deepSpace":"box";
+  $("modalBox").innerHTML=`
+    <h2 class="${QCOLOR[it.q]}" style="margin-bottom:4px;">强化 · ${itName(it)} ${it.enh?`<span class="badge">+${it.enh}</span>`:""}${it.ref?`<span class="badge">精炼${it.ref}</span>`:""}</h2>
+    <div class="cmp" style="margin-bottom:6px;">${kind} · ${QNAMES[it.q]}</div>
+    ${mid}
+    <button onclick="enhanceBack()">返 回</button>`;
+  $("modal").classList.remove("hidden");
+}
+window.doEnhance=()=>{
+  const it=window._enhIt;if(!it)return;
+  const e=it.enh||0;
+  if(e>=15){toast("已强化至 +15 满级");return;}
+  const c=enhanceCost(it);
+  if(S.gold<c.gold){toast("金币不足");return;}
+  if((S.marrow||0)<c.marrow){toast("星髓不足——星宿副本掉落");return;}
+  S.gold-=c.gold;S.marrow-=c.marrow;
+  if(Math.random()<ENH_RATE[e]){
+    it.enh=e+1;
+    blog(`【强化】${itName(it)} 强化成功 → <b class="up">+${e+1}</b>！`,"sys");
+    toast(`强化成功：+${e+1}`+(e+1>=11?" 🎉":""));
+    if(e+1===15)blog(`—— ${itName(it)} 强化圆满 +15！精炼之路开启（消耗周天星砂）——`,"sys");
+  }else{
+    it.enh=Math.max(0,e-1); // 陛下拍板：失败掉级才刺激
+    blog(`【强化】${itName(it)} 强化失败……退回 <b class="down">+${it.enh}</b>`,"dmg");
+    toast("强化失败，掉 1 级（赌狗有风险）");
+  }
+  drawEnhance(it);renderAll();autosave();
+};
+window.enhanceTo10=()=>{
+  const it=window._enhIt;if(!it)return;
+  let n=0;
+  while((it.enh||0)<10){
+    const c=enhanceCost(it);
+    if(S.gold<c.gold||(S.marrow||0)<c.marrow){toast(n?`金币/星髓耗尽，停在 +${it.enh}`:"资源不足");break;}
+    S.gold-=c.gold;S.marrow-=c.marrow;
+    it.enh=(it.enh||0)+1;n++;
+  }
+  if(n){blog(`【强化】一键强化完成：+${it.enh}（${n} 级必成）`,"sys");toast("一键强化到 +"+it.enh);}
+  drawEnhance(it);renderAll();autosave();
+};
+window.doRefine=()=>{
+  const it=window._enhIt;if(!it)return;
+  const r=it.ref||0;
+  if((it.enh||0)<15){toast("先强化到 +15 再精炼");return;}
+  if(r>=5){toast("精炼已圆满");return;}
+  const c=refineCost(it);
+  if(S.gold<c.gold){toast("金币不足");return;}
+  if((S.stardust||0)<c.dust){toast("周天星砂不足——星宿池肆/北斗深层 BOSS 掉落");return;}
+  S.gold-=c.gold;S.stardust-=c.dust;
+  it.ref=r+1;
+  blog(`【精炼】${itName(it)} 精炼 <b class="up">${it.ref}/5</b> 阶！`,"sys");
+  toast(`精炼成功：${it.ref}/5 阶`);
+  drawEnhance(it);renderAll();autosave();
+};
+/* 强化入口（四处）：装备已穿戴/背包装备/星宿上阵位/星宿行囊 */
+window.openEnhanceEq=s=>{const it=S.equip[s];if(!it)return;openEnhance(it,()=>showEquipped(s));};
+window.openEnhanceBag=i=>{const it=S.bag[i];if(!it)return;openEnhance(it,()=>showBagItem(i));};
+window.openEnhanceStar=(type,idx)=>{const it=type==="bd"?S.starOn.bd[idx]:type==="xiu"?S.starOn.xiu[idx]:S.starOn.book;if(!it)return;openEnhance(it,()=>showStarOn(type,idx));};
+window.openEnhanceStarBag=i=>{const it=S.starBag[i];if(!it)return;openEnhance(it,()=>showStarBagItem(i));};
 function renderHero(){
   const st=calcStats(),b=lvBase();
   $("pLevel").textContent=`Lv.${S.lv} ${S.playerName||"勇者"}`;
@@ -840,6 +1340,8 @@ function renderHero(){
   $("pPot").textContent=S.pot;
   $("pGold").textContent=S.gold;
   $("pStones").textContent=S.stones||0;
+  $("pMarrow").textContent=S.marrow||0;
+  $("pDust").textContent=S.stardust||0;
   $("stamPrice").textContent=stamPrice();
   $("buffState").textContent=`掉率符${S.buffDrop||0}分 · 经验符${S.buffXp||0}分`;
   $("vCount").textContent=S.vouchers||0;
@@ -863,7 +1365,7 @@ function renderBag(){
     </div>`).join(""):"<p class='cmp'>背包空空，去刷副本吧！</p>";
 }
 function renderLog(){$("battleLog").innerHTML=S.log.join("");$("battleLog").scrollTop=1e6;}
-function renderAll(){renderDungeons();renderHero();renderSlots();renderBag();renderHp();updateFarmStat();}
+function renderAll(){renderDungeons();renderStarMaps();renderHero();renderSlots();renderStarSlots();renderBag();renderHp();updateFarmStat();}
 /* ================= 装备详情弹窗 ================= */
 function affixHtml(it){
   const base=Object.entries(it.base).map(([k,v])=>({atk:"攻击",def:"防御",hp:"生命",spd:"速度"}[k])+` +${v}`).join("　");
@@ -887,6 +1389,7 @@ window.showBagItem=i=>{
     <button class="primary" onclick="equipItem(${i})">穿 戴</button>
     ${it.affixes.length?`<button class="gold" onclick="openRework(${i})">洗练（锁2条重随）</button>`:''}
     <button onclick="openEngrave(${i},'bag')">刻印套装石${it.setStone?`（已刻·${it.setStone}）`:''}</button>
+    <button class="gold" onclick="openEnhanceBag(${i})">强 化${it.enh?`（+${it.enh}${it.ref?`·精${it.ref}`:''}）`:''}</button>
     <button onclick="sellItem(${i})">出 售（+${sellPrice(it)}金币）</button>
     <button onclick="closeModal()">关 闭</button>`;
   $("modal").classList.remove("hidden");
@@ -900,10 +1403,13 @@ window.showEquipped=s=>{
     <div style="margin-top:8px;">
     <button onclick="unequipItem('${s}')">卸 下</button>
     <button onclick="openEngrave(-1,'eq','${s}')">刻印套装石${it.setStone?`（已刻·${it.setStone}）`:''}</button>
+    <button class="gold" onclick="openEnhanceEq('${s}')">强 化${it.enh?`（+${it.enh}${it.ref?`·精${it.ref}`:''}）`:''}</button>
     <button onclick="closeModal()">关 闭</button></div>`;
   $("modal").classList.remove("hidden");
 };
 window.closeModal=()=>{$("modal").classList.add("hidden");$("modalBox").className="box";};
+/* v3.0.1 修虫：exportSave/importSave 之前调用的 openModal 从未定义→点击无反应。补全局助手（与直写式弹窗同款行为） */
+window.openModal=html=>{$("modalBox").className="box";$("modalBox").innerHTML=html;$("modal").classList.remove("hidden");};
 $("modal").onclick=e=>{if(e.target.id==="modal")closeModal();};
 function sellPrice(it){return Math.round(QATK[it.q][0]*QPOW[it.q]*0.1)+it.lvl;}
 window.equipItem=i=>{
@@ -964,7 +1470,7 @@ $("btnWipe").onclick=()=>{if(confirm("确定删档重来？")){stopFarm();localS
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");
-  ["dungeon","hero","bag"].forEach(t=>$("tab-"+t).classList.toggle("hidden",t!==b.dataset.tab));
+  ["dungeon","star","hero","bag"].forEach(t=>$("tab-"+t).classList.toggle("hidden",t!==b.dataset.tab));
 });
 /* ================= 词条重铸（洗练 v2.1a） ================= */
 function rwCost(it){
@@ -1206,20 +1712,46 @@ function buyVoucherPack(){
   blog("【商城】金币兑换代金券×10","sys");toast("代金券+10");
   showMall();renderAll();autosave();
 }
+/* 双通道存档迁移（v3.0）：文件下载/打开（电脑推荐·支持多版本备份）+ 复制粘贴（手机推荐）——同一串存档文本，导入链路共用 */
+function downloadSave(){
+  autosave();
+  const d=localStorage.getItem("bzyz_v2_save")||"";
+  if(!d){toast("没有存档可导出");return;}
+  const blob=new Blob([d],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="爆装勇者存档_"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast("存档文件已下载");
+}
+function loadSaveFile(inp){ // 文件读入后填入文本框，确认导入走同一 doImport 链路
+  const f=inp.files&&inp.files[0];
+  if(!f)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const ta=$("impTxt");
+    if(ta){ta.value=e.target.result;toast("文件已读入——点【确认导入】生效");}
+  };
+  rd.readAsText(f);
+}
 function exportSave(){
   autosave();
   const d=localStorage.getItem("bzyz_v2_save")||"";
   openModal(`<h2>导出存档</h2>
-    <div class="cmp">复制下面全部文本保存到备忘录——在目标设备的"导入存档"里粘贴即可迁移进度。</div>
+    <div class="cmp">电脑：点【下载存档文件】留存（可存多个版本备份）。手机：复制下面全部文本到备忘录/文件传输助手——在目标设备"导入存档"里粘贴或打开该文件即可迁移。</div>
+    <button onclick="downloadSave()">📥 下载存档文件（电脑推荐）</button>
     <textarea style="width:100%;height:180px;margin-top:6px;font-size:11px;" readonly onclick="this.select()">${d}</textarea>
     <button onclick="closeModal()">关闭</button>`);
   $("modal").classList.remove("hidden");
 }
 function importSave(){
   openModal(`<h2>导入存档</h2>
-    <div class="cmp">粘贴存档文本（来自源设备的"导出存档"），将覆盖当前进度。</div>
-    <textarea id="impTxt" style="width:100%;height:180px;margin-top:6px;font-size:11px;" placeholder="在此粘贴存档文本……"></textarea>
+    <div class="cmp">电脑：点【打开存档文件】选择下载过的存档。手机：粘贴存档文本（来自源设备"导出存档"）。两种方式都会覆盖当前进度，导入前请确认目标进度不再需要。</div>
+    <input type="file" id="impFile" accept=".json,.txt" style="display:none" onchange="loadSaveFile(this)">
+    <textarea id="impTxt" style="width:100%;height:180px;margin-top:6px;font-size:11px;" placeholder="在此粘贴存档文本，或用上方按钮打开存档文件……"></textarea>
     <div style="margin-top:6px;">
+      <button onclick="document.getElementById('impFile').click()">📂 打开存档文件（电脑推荐）</button>
       <button class="primary" onclick="doImport()">确认导入</button>
       <button onclick="closeModal()">取消</button></div>`);
   $("modal").classList.remove("hidden");
@@ -1241,11 +1773,17 @@ function load(){
     const d=localStorage.getItem("bzyz_v2_save");
     if(d){
       // v2.1a字段修补：老档缺省合并+NaN清理（防undefined传染）
-      S=Object.assign({stones:0,stamBuyCnt:0,buffDrop:0,buffXp:0,abyssBest:0,abF:null,stoneInv:{},vouchers:0,playerName:"勇者",titlesOwned:[],titlesOn:"",rwCount:0,cosmetics:{},fashionsOwned:[],fashionOn:"",renameCount:0},JSON.parse(d));
+      S=Object.assign({stones:0,stamBuyCnt:0,buffDrop:0,buffXp:0,abyssBest:0,abF:null,stoneInv:{},vouchers:0,playerName:"勇者",titlesOwned:[],titlesOn:"",rwCount:0,cosmetics:{},fashionsOwned:[],fashionOn:"",renameCount:0,
+        starOn:{bd:[null,null,null,null,null,null,null],xiu:[null,null,null,null,null,null,null],book:null},starBag:[],starUnlock:{pool:0,bd:0},marrow:0,stardust:0},JSON.parse(d));
+      // v3.0 字段结构修补：老档合并后确保星宿槽位/袋子的形状完整
+      if(!S.starOn||!S.starOn.bd)S.starOn={bd:[null,null,null,null,null,null,null],xiu:[null,null,null,null,null,null,null],book:null};
+      if(!S.starOn.xiu)S.starOn.xiu=[null,null,null,null,null,null,null];
+      if(!Array.isArray(S.starBag))S.starBag=[];
+      if(!S.starUnlock)S.starUnlock={pool:0,bd:0};
       // NaN在JSON序列化中变null——null/NaN双查
       if(S.gold===null||isNaN(S.gold)){S.gold=50000;
         setTimeout(()=>{toast("存档金币数据损坏——赔礼50000金币！");blog("【系统】检测到存档金币损坏，已赔礼50000金币","sys");},800);}
-      ["stones","stamBuyCnt","buffDrop","buffXp","abyssBest"].forEach(k=>{if(S[k]===null||S[k]===undefined||isNaN(S[k]))S[k]=0;});
+      ["stones","stamBuyCnt","buffDrop","buffXp","abyssBest","marrow","stardust"].forEach(k=>{if(S[k]===null||S[k]===undefined||isNaN(S[k]))S[k]=0;});
       return true;
     }
   }catch(e){}
@@ -1253,8 +1791,8 @@ function load(){
 }
 function toast(m){const t=$("toast");t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,1800);}
 /* ================= 启动 ================= */
-if(!load()){newGame();blog("欢迎来到《爆装勇者》v2.0！点击副本列表中的【前往】开始自动刷怪吧！","sys");}
-checkPet();checkTitles();if(S.cosmetics&&S.cosmetics.theme)applyTheme(S.cosmetics.theme);
+if(!load()){newGame();blog("欢迎来到《爆装勇者》v3.0！点击副本列表中的【前往】开始自动刷怪吧！","sys");}
+checkPet();checkTitles();checkStarUnlock();if(S.cosmetics&&S.cosmetics.theme)applyTheme(S.cosmetics.theme);
 const st0=calcStats();if(!S.hp||S.hp>st0.hp)S.hp=st0.hp;
 renderAll();renderLog();
 </script>
